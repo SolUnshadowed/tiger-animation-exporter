@@ -9,18 +9,29 @@ from src.decode_animation.decode_animation import Bone_Tracks
 logger = logging.getLogger(__name__)
 
 
-def animation_to_json(animation_data: Animation_Data, bone_tracks: list[Bone_Tracks]) -> list[dict]:
+def animation_to_json(
+	animation_data: Animation_Data, bone_tracks: list[Bone_Tracks] | list[Bone_Tracks | None]
+) -> list[dict]:
 	result = [
 		{
 			"bone_tracks": [
-				asdict(
-					Bone_Tracks(
-						track.scales.tolist() if track.scales is not None else [],
-						track.rotations.tolist() if track.rotations is not None else [],
-						track.translations.tolist() if track.translations is not None else [],
-						track.bone_name_hash
-					)
-				) for track in bone_tracks
+				{
+					"scales": track.scales.tolist(),
+					"rotations": track.rotations.tolist(),
+					"translations": track.translations.tolist(),
+					"bone_name_hash": track.bone_name_hash
+
+				}
+				if track is not None
+				else
+				{
+					"scales": [],
+					"rotations": [],
+					"translations": [],
+					"bone_name_hash": -1
+
+				}
+				for track in bone_tracks
 			],
 			"frame_count": animation_data.animation_header.frame_count,
 			"node_count": animation_data.animation_header.node_count,
