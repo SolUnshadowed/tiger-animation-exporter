@@ -412,7 +412,7 @@ class Package_Worker(QObject):
 
 		components_hashes = [component.hash for component in rig.rig_components]
 
-		animations_handles = self.scanner.cache.prefix_tree.find_full(components_hashes) # find_full
+		animations_handles = self.scanner.cache.prefix_tree.find_full(components_hashes)
 		animation_tags = []
 
 		for animation_handle_int in animations_handles:
