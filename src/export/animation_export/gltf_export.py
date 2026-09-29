@@ -19,7 +19,7 @@ from src.decode_animation.decode_animation import Bone_Tracks
 logger = logging.getLogger(__name__)
 
 
-def get_bone_name(num, convention: Bone_Name_Convention):
+def get_bone_name(num: int, convention: Bone_Name_Convention):
 	match convention:
 		case Bone_Name_Convention.FNV1LE:
 			return u32_to_le_hex(num)
@@ -37,7 +37,7 @@ def get_bone_name(num, convention: Bone_Name_Convention):
 			return u32_to_be_hex(num)
 
 
-def pack_buffer_entries(gltf, entries, target=None):
+def pack_buffer_entries(gltf: GLTF2, entries, target=None):
 	"""
 	Packs all entries of entries array into one Buffer and creates BufferView + Accessor for each
 	entries: [
@@ -119,10 +119,10 @@ def pack_buffer_entries(gltf, entries, target=None):
 
 
 def create_armature_object_space(
-	gltf,
+	gltf: GLTF2,
 	skeleton_data: Skeleton,
 	convention: Bone_Name_Convention
-):
+) -> tuple[int, dict[str, int]]:
 	"""
 	Create armature nodes + fake root and skin with inverseBindMatrices.
 	skeleton_json: destiny_player_skeleton.js
@@ -191,7 +191,7 @@ def create_armature_object_space(
 
 
 def create_armature_hierarchy(
-	gltf,
+	gltf: GLTF2,
 	skeleton_data: Skeleton,
 	convention: Bone_Name_Convention
 ):
@@ -203,7 +203,6 @@ def create_armature_hierarchy(
 	transforms = skeleton_data.default_obj_space_tr
 	inv_transforms = skeleton_data.default_inv_obj_space_tr
 
-	bone_indices = {}
 	world_mats = [transform_to_np_matrix(t) for t in transforms]
 	inv_world_mats = [transform_to_np_matrix(t) for t in inv_transforms]
 	local_mats = []
@@ -298,11 +297,12 @@ def create_armature_hierarchy(
 
 
 def add_animation(
-	gltf,
-	bone_indices,
+	gltf: GLTF2,
+	bone_indices: dict[str, int],
 	animation_data: list[Bone_Tracks],
 	convention: Bone_Name_Convention,
-	fps=30
+	name: str,
+	fps: int=30
 ):
 	# bone_indices: dict bone_name -> bone_index
 	anim_entries = []
@@ -421,22 +421,22 @@ def add_animation(
 	logger.info("Samplers and accessors added")
 
 	# add animation to gltf
-	gltf.animations.append(Animation(
-		name="MainAnim",
+	gltf.animations.append(
+		Animation(
+		name=name,
 		channels=channels,
 		samplers=samplers
-	))
+		)
+	)
 
 	logger.info("Added animation")
 
 
-def export_gltf(
+def create_gltf(
 	skeleton_data: Skeleton,
-	animation_data: list[Bone_Tracks],
 	mode: Animation_Space,
-	output_path: Path,
 	name_convention: Bone_Name_Convention
-):
+) -> tuple[GLTF2, dict[str, int]]:
 	gltf = GLTF2()
 	gltf.nodes = []
 	gltf.buffers = []
@@ -445,18 +445,19 @@ def export_gltf(
 	gltf.animations = []
 	gltf.skins = []
 
-	if mode == Animation_Space.OBJECT:
-		root_index, bone_indices = create_armature_object_space(gltf, skeleton_data, name_convention)
-		gltf.scene = 0
-		gltf.scenes = [Scene(nodes=[root_index])]
+	match mode:
+		case Animation_Space.OBJECT:
+			root_index, bone_indices = create_armature_object_space(gltf, skeleton_data, name_convention)
 
-		add_animation(gltf, bone_indices, animation_data, name_convention, fps=30)
-	elif mode == Animation_Space.LOCAL:
-		root_index, bone_indices = create_armature_hierarchy(gltf, skeleton_data, name_convention)
-		gltf.scene = 0
-		gltf.scenes = [Scene(nodes=[root_index])]
+		case Animation_Space.LOCAL:
+			root_index, bone_indices = create_armature_hierarchy(gltf, skeleton_data, name_convention)
 
-		add_animation(gltf, bone_indices, animation_data, name_convention, fps=30)
+	gltf.scene = 0
+	gltf.scenes = [Scene(nodes=[root_index])]
 
+	return gltf, bone_indices
+
+
+def save_gltf(gltf: GLTF2, output_path: Path):
 	gltf.save(output_path)
 	logger.info(f"Saved file as: {output_path}")

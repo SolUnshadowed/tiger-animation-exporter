@@ -32,7 +32,7 @@ from src.tag_readers.render_globals.read_s_vertex_input_layout_mapping import re
 
 from src.decode_animation.decode_animation import decode_animation, Bone_Tracks
 from src.export.animation_export.convert_animation_object_to_local import convert_obj_to_local
-from src.export.animation_export.gltf_export import export_gltf
+from src.export.animation_export.gltf_export import create_gltf, add_animation, save_gltf
 from src.export.animation_export.export_animation import animation_to_json, write_json_file
 from src.export.animation_export.enums import Bone_Name_Convention, Animation_Space, Export_Target
 from src.runtime_rig.rig_retarget import rig_retarget
@@ -115,7 +115,7 @@ class Package_Worker(QObject):
 		self.manager = Package_Manager(data.game_version, data.platform, data.packages_path, data.cache_path)
 		self.loading_progress.emit(Animation_Scanner_Progress)
 		self.scanner = Animation_Scanner(self.manager, data.cache_path)
-		self.loading_waiting.emit("Contuinue misc tasks")
+		self.loading_waiting.emit("Continue misc tasks")
 		self.export_path = data.cache_path / "exports"
 		self.vertex_data = None
 		self.state = None
@@ -161,7 +161,7 @@ class Package_Worker(QObject):
 
 	@Slot(list)
 	def get_packages_list(self):
-		self.busy_changed.emit(True)
+		self.loading_waiting.emit("Loading")
 
 		self.package_list_ready_emitter.emit(
 			[
@@ -172,11 +172,11 @@ class Package_Worker(QObject):
 			]
 		)
 
-		self.busy_changed.emit(False)
+		self.loading_hide.emit()
 
 	@Slot(list)
 	def get_non_redacted_entities_for_package(self, package_id: int):
-		self.busy_changed.emit(True)
+		self.loading_waiting.emit("Loading")
 
 		self.non_redacted_entities_for_package_ready_emitter.emit(
 			[
@@ -193,7 +193,7 @@ class Package_Worker(QObject):
 			]
 		)
 
-		self.busy_changed.emit(False)
+		self.loading_hide.emit()
 
 	def get_model_buffers(self, entity_handle: Tag_Handle) -> list[None | Model_Properties]:
 		game_version = self.manager.version
@@ -377,7 +377,7 @@ class Package_Worker(QObject):
 
 	@Slot("quint32")
 	def select_entity(self, entity_handle_int: int):
-		self.busy_changed.emit(True)
+		self.loading_waiting.emit("Loading")
 
 		self.state = None
 
@@ -451,7 +451,7 @@ class Package_Worker(QObject):
 			)
 		)
 
-		self.busy_changed.emit(False)
+		self.loading_hide.emit()
 
 	@Slot("quint32")
 	def get_animation(self, animation_handle_int: int):
@@ -459,7 +459,7 @@ class Package_Worker(QObject):
 			logger.error("No skeleton and rig selected")
 			return
 
-		self.busy_changed.emit(True)
+		self.loading_waiting.emit("Loading")
 
 		animation_handle = Tag_Handle(animation_handle_int)
 
@@ -496,7 +496,7 @@ class Package_Worker(QObject):
 		except Exception as e:
 			logger.error(e)
 
-		self.busy_changed.emit(False)
+		self.loading_hide.emit()
 
 	def export_animation(self):
 		if self.export_path is None:
@@ -511,7 +511,7 @@ class Package_Worker(QObject):
 			logger.error("No animation selected")
 			return
 
-		self.busy_changed.emit(True)
+		self.loading_waiting.emit("Loading")
 
 		if not self.export_path.exists():
 			self.export_path.mkdir(parents=True, exist_ok=True)
@@ -523,7 +523,7 @@ class Package_Worker(QObject):
 		if export_target == Export_Target.JSON_RAW:
 			logger.info(f"Used export target: {Export_Target.JSON_RAW.value}")
 
-			result_filename = f"s_animation_clip_{animation_handle:#08X}_raw.json"
+			result_filename = f"s_animation_clip_{animation_handle:08X}_raw.json"
 			# no bones annotations, because these are controls
 			animation_json = animation_to_json(animation_data, self.tracks)
 			write_json_file(self.export_path / result_filename, animation_json, self.export_settings.json_indent)
@@ -536,16 +536,17 @@ class Package_Worker(QObject):
 				else self.state.animation.local_space_animation
 
 			if export_target == Export_Target.JSON_RETARGET:
-				result_filename =  f"s_animation_clip_{animation_handle:#08X}.json"
+				result_filename =  f"s_animation_clip_{animation_handle:08X}.json"
 				animation_json = animation_to_json(animation_data, result_tracks)
 				write_json_file(self.export_path / result_filename, animation_json, self.export_settings.json_indent)
 
 			elif export_target == Export_Target.GLTF_RETARGET:
-				result_filename = f"s_animation_clip_{animation_handle:#08X}.gltf"
-				export_gltf(
-					self.state.skeleton, result_tracks,
-					self.export_settings.animation_space,
-					self.export_path / result_filename,
-					self.export_settings.name_convention
-				)
-		self.busy_changed.emit(False)
+				result_filename = f"s_animation_clip_{animation_handle:08X}.gltf"
+
+				gltf, indices = create_gltf(self.state.skeleton, self.export_settings.animation_space, self.export_settings.name_convention)
+
+				add_animation(gltf, indices, result_tracks, self.export_settings.name_convention, f"{animation_handle:08X}")
+
+				save_gltf(gltf, self.export_path / result_filename)
+
+		self.loading_hide.emit()

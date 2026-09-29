@@ -61,8 +61,6 @@ class Main_Window(QWidget):
 		worker.loading_progress.connect(self.overlay.start_polling)
 		worker.loading_hide.connect(self.overlay.hide_overlay)
 
-		#self.worker.busy_changed.connect(self.worker_overlay_switcher)
-
 		# update settings -> set them to worker -> worker returns success/fail
 		self.worker.worker_started.connect(self.on_worker_update)
 
