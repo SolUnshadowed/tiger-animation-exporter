@@ -6,7 +6,7 @@ from PySide6.QtCore import Signal, QObject, Slot
 from pathlib import Path
 from dataclasses import dataclass
 
-from libs.tiger_pkg.manager.package_manager import Package_Manager
+from libs.tiger_pkg.manager.package_manager import Package_Manager, PROGRESS as Package_Manager_Progress
 from libs.tiger_pkg.game_version import Game_Version
 from libs.tiger_pkg.enums import Package_Platform
 from libs.tiger_pkg.tag_handle import Tag_Handle
@@ -36,7 +36,7 @@ from src.export.animation_export.gltf_export import export_gltf
 from src.export.animation_export.export_animation import animation_to_json, write_json_file
 from src.export.animation_export.enums import Bone_Name_Convention, Animation_Space, Export_Target
 from src.runtime_rig.rig_retarget import rig_retarget
-from src.scanner.animation_scanner import Animation_Scanner
+from src.scanner.animation_scanner import Animation_Scanner, PROGRESS as Animation_Scanner_Progress
 from src.scanner.classes import s_pattern_refs, s_dynamic_model_component_secondary_classes
 from src.buffers.vertex_buffer import Vertex_Buffer
 from src.buffers.index_buffer import Index_Buffer
@@ -94,6 +94,9 @@ class Package_Worker(QObject):
 	render_data_emitter = Signal(object)
 	animation_emitter = Signal(object)
 	worker_started = Signal(bool)
+	loading_waiting = Signal(str)
+	loading_progress = Signal(object)
+	loading_hide = Signal()
 
 	state: State | None
 	manager: Package_Manager
@@ -108,11 +111,15 @@ class Package_Worker(QObject):
 		self.export_settings = export_settings
 
 	def set_data(self, data: Worker_Data):
+		self.loading_progress.emit(Package_Manager_Progress)
 		self.manager = Package_Manager(data.game_version, data.platform, data.packages_path, data.cache_path)
+		self.loading_progress.emit(Animation_Scanner_Progress)
 		self.scanner = Animation_Scanner(self.manager, data.cache_path)
+		self.loading_waiting.emit("Contuinue misc tasks")
 		self.export_path = data.cache_path / "exports"
 		self.vertex_data = None
 		self.state = None
+
 		try:
 			self.vertex_data = self.get_vertex_layouts()
 			self.vertex_data_2 = self.get_vertex_layouts(2)

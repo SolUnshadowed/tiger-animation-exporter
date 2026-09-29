@@ -7,6 +7,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from libs.progress import Progress
 from libs.tiger_pkg.manager.package_manager import Package_Manager, game_version_to_package
 from libs.tiger_pkg.packages import exceptions as package_err
 from libs.tiger_pkg.game_version import Game_Version
@@ -32,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 CACHE_VERSION = 1
 CACHE_FILE_NAME_TEMPLATE = "animations_cache_{}.bin"
+PROGRESS = Progress()
 
 
 @dataclass(slots=True)
@@ -131,7 +133,6 @@ class Animation_Scanner:
 	cache_path: Path
 	manager: Package_Manager
 
-
 	def __init__(self, manager: Package_Manager, cache_path: Path):
 		self.manager = manager
 		self.cache_path = cache_path
@@ -147,6 +148,9 @@ class Animation_Scanner:
 			self.write_animations_cache()
 
 	def build_animations_cache(self) -> Animation_Cache:
+		PROGRESS.update(0, 0, "Building animations cache")
+		logger.info("Building animations cache")
+
 		start_time = time.time()
 		# scan animations in process pool
 		tasks = [
@@ -177,6 +181,7 @@ class Animation_Scanner:
 					all_skeletons.update(res.skeletons)
 					all_rigs.update(res.rigs)
 
+					PROGRESS.update(progress, total, f"Searching animations in packages ({progress} / {total})")
 					logger.info(f"Scanned {package_path.filename} ({progress} / {total})")
 					logger.info(f"Animations: {len(res.animations)}, Skeletons: {len(res.skeletons)}, Rigs: {len(res.rigs)}, Entities: {len(res.entities)}")
 
@@ -185,7 +190,10 @@ class Animation_Scanner:
 		game_version = self.manager.version
 		entities_with_skeleton_rig = dict()
 
-		for i in range(len(all_entities)):
+		PROGRESS.update(0, 0, "Reading entities")
+		total_entities = len(all_entities)
+
+		for i in range(total_entities):
 			entity_tag = Tag_Handle(all_entities[i])
 			package = self.manager.get_or_load_pkg(entity_tag.package_id)
 			endianness = package.endianness
@@ -209,6 +217,8 @@ class Animation_Scanner:
 
 				if skeleton is not None and rig is not None:
 					entities_with_skeleton_rig[all_entities[i]] = Entity_Scan(skeleton, rig)
+
+				PROGRESS.update(i + 1, total_entities, f"Reading entity {entity_tag.__repr__()} ({i + 1} / {total_entities})")
 
 			except package_err.Package_Decrypt_Error as e:
 				logger.debug(f"Failed to read redacted entity {entity_tag}")
@@ -236,6 +246,7 @@ class Animation_Scanner:
 	def write_animations_cache(self) -> None:
 		try:
 			with open(self.cache_path / CACHE_FILE_NAME_TEMPLATE.format(self.manager.cache_key()), "wb") as f:
+				PROGRESS.update(0, 0, "Writing animations cache")
 				pickle.dump(self.cache, f, protocol=pickle.HIGHEST_PROTOCOL)
 		except Exception as e:
 			logger.error(f"Failed to write cache: {e}")
@@ -243,8 +254,12 @@ class Animation_Scanner:
 	def read_animations_cache(self) -> Animation_Cache | None:
 		try:
 			with open(self.cache_path / CACHE_FILE_NAME_TEMPLATE.format(self.manager.cache_key()), "rb") as f:
-				logger.info("Loading animations cache...")
+				PROGRESS.update(0, 0, "Reading animations cache")
+				logger.info("Reading animations cache")
+
 				cache = pickle.load(f)
+
+				PROGRESS.update(0, 0, "Animations cache loaded")
 				logger.info("Animations cache loaded")
 				return cache
 		except FileNotFoundError:

@@ -50,14 +50,18 @@ class Main_Window(QWidget):
 
 
 	def init_service(self, worker: Package_Worker):
-		self.overlay.show_overlay("Starting...")
+		self.overlay.start_waiting("Starting")
 
 		# create thread and move worker to it
 		self.service_thread = QThread()
 		self.worker = worker
 		self.worker.moveToThread(self.service_thread)
 
-		self.worker.busy_changed.connect(self.worker_overlay_switcher)
+		worker.loading_waiting.connect(self.overlay.start_waiting)
+		worker.loading_progress.connect(self.overlay.start_polling)
+		worker.loading_hide.connect(self.overlay.hide_overlay)
+
+		#self.worker.busy_changed.connect(self.worker_overlay_switcher)
 
 		# update settings -> set them to worker -> worker returns success/fail
 		self.worker.worker_started.connect(self.on_worker_update)

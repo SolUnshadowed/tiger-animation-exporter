@@ -8,6 +8,7 @@ from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
+from libs.progress import Progress
 from libs.tiger_pkg.manager import exceptions as err
 from libs.tiger_pkg.enums import Package_Platform
 from libs.tiger_pkg.game_version import Game_Version
@@ -17,7 +18,6 @@ from libs.tiger_pkg.packages.d1_devalpha.package import Package_D1_DEVALPHA
 from libs.tiger_pkg.packages.d1_roi.package import Package_D1_ROI
 from libs.tiger_pkg.packages.d2_eof.package import Package_D2_EOF
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -25,6 +25,7 @@ PACKAGE_CACHE_FILE_NAME = "package_cache.json"
 LOOKUP_CACHE_FILE_NAME_TEMPLATE = "lookup_cache_{}.bin"
 LOOKUP_CACHE_MAGIC = b"TLC0" # to keep it different from tiger-pkg as it is in different format
 CACHE_VERSION = 1
+PROGRESS = Progress()
 
 
 game_version_to_package: dict[Game_Version, type[Package]] = {
@@ -120,6 +121,7 @@ class Package_Manager:
 
 		packages: dict[int, str] | None = None
 
+		PROGRESS.update(0, 0, "Loading path cache")
 		logger.info("Loading path cache...")
 
 		cache = self.read_package_cache()
@@ -131,10 +133,12 @@ class Package_Manager:
 
 		cache_up_to_date = False
 		if valid_entry:
+			PROGRESS.update(0, 0, "Path cache loaded")
 			logger.info("Path cache loaded")
 			packages = valid_entry.paths
 			cache_up_to_date = True
 		else:
+			PROGRESS.update(0, 0, "Path cache is invalid or missing, creating new one")
 			logger.info("Path cache is invalid or missing, creating new one")
 			packages = self.scan_and_build_package_cache()
 
@@ -175,6 +179,7 @@ class Package_Manager:
 				paths={pkg_id: pkg_path for pkg_id, pkg_path in packages.items()}
 			)
 
+			PROGRESS.update(0, 0, "Path cache created")
 			logger.info("Path cache created")
 
 		if not cache_up_to_date:
@@ -336,6 +341,7 @@ class Package_Manager:
 
 				res = future.result()
 
+				PROGRESS.update(progress, total, f"Scanned package {package_path.filename} ({progress} / {total})")
 				logger.info(f"Scanned {package_path.filename} ({progress} / {total})")
 
 				if res is not None:
@@ -375,8 +381,12 @@ class Package_Manager:
 					logger.info("Invalid lookup cache magic")
 					return None
 
-				logger.info("Loading index cache...")
+				PROGRESS.update(0, 0, "Loading index cache")
+				logger.info("Loading index cache")
+
 				cache = pickle.load(f)
+
+				PROGRESS.update(0, 0, "Index cache loaded")
 				logger.info("Index cache loaded")
 				return cache
 
@@ -390,8 +400,15 @@ class Package_Manager:
 	def write_lookup_cache(self) -> None:
 		try:
 			with open(self.cache_directory / LOOKUP_CACHE_FILE_NAME_TEMPLATE.format(self.cache_key()), "wb") as f:
+				PROGRESS.update(0, 0, "Writing lookup cache")
+				logger.info("Writing lookup cache")
+
 				f.write(LOOKUP_CACHE_MAGIC)
 				pickle.dump(self.lookup, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+				PROGRESS.update(0, 0, "Lookup cache written")
+				logger.info("Lookup cache written")
+
 		except Exception as e:
 			logger.error(f"Failed to write cache: {e}")
 

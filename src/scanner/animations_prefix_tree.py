@@ -95,6 +95,3 @@ class Animation_Prefix_Tree:
 					stack.append(child_index)
 
 		return list(matched_handles)
-
-
-

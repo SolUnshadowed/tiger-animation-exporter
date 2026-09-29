@@ -36,4 +36,4 @@ class Tag_Handle:
 		return self.value
 
 	def __repr__(self) -> str:
-		return f"Tag_Handle(0x{self.value:08X})"
+		return f"0x{self.value:08X}"
