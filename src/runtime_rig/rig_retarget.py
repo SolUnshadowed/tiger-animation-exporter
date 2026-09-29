@@ -468,11 +468,11 @@ def rig_retarget(
 						case Space_Type.PARENT:  # 1
 							parent_bone_index = constraint.rot_space_0.bone_index_0
 
-							if not is_bone_updated[parent_bone_index]:
+							if not is_bone_updated[parent_bone_index] and parent_bone_index > -1:
 								logger.warning(f"parent // rot constraint 'parent': bone {parent_bone_index} is not updated yet!")
 								continue
 
-							parent_matrix = skeleton_bones_matrices[parent_bone_index]
+							parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else object_matrix
 							parent_tr = glm_get_translation(parent_matrix)
 							parent_rot = glm_get_quat(parent_matrix)
 
