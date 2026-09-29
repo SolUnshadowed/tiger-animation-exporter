@@ -385,5 +385,7 @@ class Canvas_Frame(QWidget):
 			self.canvas.request_draw(self.animate)
 
 	def closeEvent(self, event):
-		self.canvas.stop()
+		self.render_status = False
+		self.scene.clear()
+		self.canvas.close()
 		event.accept()

@@ -115,6 +115,6 @@ class Main_Window(QWidget):
 		self.overlay.hide_overlay()
 
 	def shutdown(self):
-		self.entity_page.render.render_status = False
+		self.entity_page.render.close()
 		self.service_thread.quit()
 		self.service_thread.wait()
