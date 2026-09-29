@@ -1,4 +1,3 @@
-import os
 import logging
 import numpy as np
 
@@ -10,7 +9,7 @@ from libs.tiger_pkg.manager.package_manager import Package_Manager, PROGRESS as 
 from libs.tiger_pkg.game_version import Game_Version
 from libs.tiger_pkg.enums import Package_Platform
 from libs.tiger_pkg.tag_handle import Tag_Handle
-from libs.binary_reader import Binary_Reader, u32, Endianness
+from libs.binary_reader import Binary_Reader, u32
 from libs.tiger.buffer_decoder.d1_vertex_types import d1_devalpha_types
 from libs.tiger.buffer_decoder.buffer_decoder import decode_vertex_buffer
 from libs.tiger.shaders.input_layouts import Input_Semantics
@@ -123,7 +122,7 @@ class Package_Worker(QObject):
 			self.vertex_data = self.get_vertex_layouts()
 			self.vertex_data_2 = self.get_vertex_layouts(2)
 			logger.info("Vertex element sets are loaded")
-		except Exception as e:
+		except Exception:
 			logger.warning("Vertex element sets were not loaded")
 
 		self.worker_started.emit(True)
@@ -300,7 +299,7 @@ class Package_Worker(QObject):
 								semantic_data[(input_element.semantic, input_element.semantic_index)] = data
 
 								offset += vertex_type.byte_size
-							except Exception as e:
+							except Exception:
 								raise NotImplementedError(f"input element format {input_element.format} is not implemented")
 
 				position_buffer = None
@@ -524,7 +523,7 @@ class Package_Worker(QObject):
 
 			result_filename = f"s_animation_clip_{animation_handle:08X}_raw.json"
 			# no bones annotations, because these are controls
-			animation_json = animation_to_json(animation_data, self.tracks)
+			animation_json = animation_to_json(animation_data, self.state.animation.raw_animation)
 			write_json_file(self.export_path / result_filename, animation_json, self.export_settings.json_indent)
 
 		else:
