@@ -86,7 +86,6 @@ class Worker_Data:
 
 
 class Package_Worker(QObject):
-	busy_changed = Signal(bool)
 	package_list_ready_emitter = Signal(list)
 	non_redacted_entities_for_package_ready_emitter = Signal(list)
 	entity_data_emitter = Signal(object)
