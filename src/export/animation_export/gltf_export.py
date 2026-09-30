@@ -197,7 +197,7 @@ def create_armature_hierarchy(
 ):
 	"""
 	Create armature nodes with hierarchy and skin.
-	Converts world-space transforms to local-space.
+	Converts world-space skeleton transforms to local-space.
 	"""
 	nodes_data = skeleton_data.node_defs
 	transforms = skeleton_data.default_obj_space_tr
