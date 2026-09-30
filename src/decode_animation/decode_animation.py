@@ -3,6 +3,7 @@ import numpy as np
 
 from dataclasses import dataclass
 from numpy.typing import NDArray
+from typing import TypedDict
 
 from libs.tag.tag_array import Tag_Array
 from src.decode_animation import exceptions as err
@@ -37,12 +38,27 @@ class Bone_Tracks_Or_None:
 	translations: NDArray[np.float32] | None = None  # (frame_count, 3)
 
 
+class Bone_Track_Dict(TypedDict):
+	scales: list[list[float]]
+	rotations: list[list[float]]
+	translations: list[list[float]]
+	bone_name_hash: int
+
+
 @dataclass(slots=True)
 class Bone_Tracks:
 	scales: NDArray[np.float32]  # (frame_count,)
 	rotations: NDArray[np.float32]  # (frame_count, 4)
 	translations: NDArray[np.float32]  # (frame_count, 3)
 	bone_name_hash: int = 0
+
+	def to_typed_dict(self) -> Bone_Track_Dict:
+		return Bone_Track_Dict(
+			scales=self.scales.tolist(),
+			rotations=self.rotations.tolist(),
+			translations=self.translations.tolist(),
+			bone_name_hash=self.bone_name_hash
+		)
 
 
 class Quat_Norm_Error(Exception):

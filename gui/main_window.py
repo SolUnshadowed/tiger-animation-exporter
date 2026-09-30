@@ -86,6 +86,7 @@ class Main_Window(QWidget):
 		self.entity_page.render.animation_data.connect(self.update_animation_data)
 
 		self.entity_page.export_button.clicked.connect(self.export_animation)
+		self.exported_animation_emitter.connect(self.worker.export_animations)
 
 		self.service_thread.start()
 

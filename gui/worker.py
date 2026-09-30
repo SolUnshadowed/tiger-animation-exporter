@@ -4,6 +4,7 @@ import numpy as np
 from PySide6.QtCore import Signal, QObject, Slot
 from pathlib import Path
 from dataclasses import dataclass
+from enum import IntEnum
 
 from libs.progress import Progress
 from libs.tiger_pkg.manager.package_manager import Package_Manager, PROGRESS as Package_Manager_Progress
@@ -32,8 +33,8 @@ from src.tag_readers.render_globals.read_s_vertex_input_layout_mapping import re
 
 from src.decode_animation.decode_animation import decode_animation, Bone_Tracks
 from src.export.animation_export.convert_animation_object_to_local import convert_obj_to_local
-from src.export.animation_export.gltf_export import create_gltf, add_animation, save_gltf
-from src.export.animation_export.export_animation import animation_to_json, write_json_file
+from src.export.animation_export.gltf_export import create_gltf, add_animation_to_gltf, save_gltf
+from src.export.animation_export.export_animation import add_animation_to_json, write_json_file
 from src.export.animation_export.enums import Bone_Name_Convention, Animation_Space, Export_Target
 from src.runtime_rig.rig_retarget import rig_retarget
 from src.scanner.animation_scanner import Animation_Scanner, PROGRESS as Animation_Scanner_Progress
@@ -45,6 +46,12 @@ from gui.worker_types import Tag_Model, Package_Model, Animation_Model, Model_Pr
 
 
 logger = logging.getLogger(__name__)
+
+
+class Animation_Level(IntEnum):
+	RAW = 0
+	OBJECT = 1
+	LOCAL = 2
 
 
 @dataclass
@@ -60,11 +67,13 @@ class Cached_Animation:
 	animation_handle: int
 	animation_data: Animation_Data
 	raw_animation: list[Bone_Tracks | None]
-	object_space_animation: list[Bone_Tracks]
+	object_space_animation: list[Bone_Tracks] | None
+	local_space_animation: list[Bone_Tracks] | None
 
 
 @dataclass
 class State:
+	entity_handle: int
 	skeleton: Skeleton
 	rig: Runtime_Rig_Data
 	animation: None | Cached_Animation
@@ -431,7 +440,7 @@ class Package_Worker(QObject):
 			logger.error(f"No skeleton or runtime rig for entity {hex(entity_handle_int)}")
 			return
 
-		self.state = State(skeleton, rig, None)
+		self.state = State(entity_handle_int, skeleton, rig, None)
 
 		model_buffers = self.get_model_buffers(entity_handle)
 
@@ -452,9 +461,7 @@ class Package_Worker(QObject):
 		self.loading_hide.emit()
 
 
-	def get_animation(
-		self, animation_handle_int: int
-	) -> None | Cached_Animation:
+	def get_animation(self, animation_handle_int: int) -> None | Cached_Animation:
 		if self.state is None:
 			logger.error("No skeleton and rig selected")
 			return None
@@ -472,13 +479,12 @@ class Package_Worker(QObject):
 
 			raw_tracks = decode_animation(animation)
 
-			retargeted_animation = rig_retarget(animation, raw_tracks, self.state.skeleton, self.state.rig)
-
 			return Cached_Animation(
 				animation_handle=animation_handle_int,
 				animation_data=animation,
 				raw_animation=raw_tracks,
-				object_space_animation=retargeted_animation
+				object_space_animation=None,
+				local_space_animation=None
 			)
 		except Exception as e:
 			logger.error(e)
@@ -498,11 +504,11 @@ class Package_Worker(QObject):
 			logger.error("Could not load animation")
 			return
 
-		self.state.animation = cached_animation
-
-		local_tracks = convert_obj_to_local(
-			cached_animation.animation_data, cached_animation.object_space_animation, self.state.skeleton
+		retargeted_animation = rig_retarget(
+			cached_animation.animation_data, cached_animation.raw_animation, self.state.skeleton, self.state.rig
 		)
+		local_tracks = convert_obj_to_local(cached_animation.animation_data, retargeted_animation, self.state.skeleton)
+		self.state.animation = cached_animation
 
 		self.gui_animation_data_emitter.emit(
 			Animation_Model(
@@ -524,10 +530,6 @@ class Package_Worker(QObject):
 			logger.error("No skeleton and rig selected")
 			return
 
-		if self.state.animation is None:
-			logger.error("No animation selected")
-			return
-
 		self.loading_waiting.emit("Loading")
 		progress = Progress()
 
@@ -535,35 +537,81 @@ class Package_Worker(QObject):
 			self.export_path.mkdir(parents=True, exist_ok=True)
 
 		export_target = self.export_settings.export_target
-		animation_data = self.state.animation.animation_data
-		animation_handle = self.state.animation.animation_handle
+
+		result_filename = f"entity_{self.state.entity_handle:08X}"
 
 		if export_target == Export_Target.JSON_RAW:
 			logger.info(f"Used export target: {Export_Target.JSON_RAW.value}")
 
-			result_filename = f"s_animation_clip_{animation_handle:08X}_raw.json"
+			result_filename = f"{result_filename}.json"
 			# no bones annotations, because these are controls
-			animation_json = animation_to_json(animation_data, self.state.animation.raw_animation)
-			write_json_file(self.export_path / result_filename, animation_json, self.export_settings.json_indent)
+			result = []
+			for handle_int in animations_handles:
+				animation = self.get_animation(handle_int)
+				if animation is not None:
+					add_animation_to_json(result, animation.animation_data, animation.raw_animation)
+				else:
+					logger.error(f"Could not add animation {handle_int:08X}")
+
+			write_json_file(self.export_path / result_filename, result, self.export_settings.json_indent)
 
 		else:
 			logger.info(f"Used export target: {export_target.value}")
 
-			result_tracks = self.state.animation.object_space_animation \
-				if self.export_settings.animation_space == Animation_Space.OBJECT \
-				else self.state.animation.local_space_animation
-
 			if export_target == Export_Target.JSON_RETARGET:
-				result_filename =  f"s_animation_clip_{animation_handle:08X}.json"
-				animation_json = animation_to_json(animation_data, result_tracks)
-				write_json_file(self.export_path / result_filename, animation_json, self.export_settings.json_indent)
+				result_filename =  f"{result_filename}.json"
+
+				result = []
+				for handle_int in animations_handles:
+					animation = self.get_animation(handle_int)
+
+					if animation is None:
+						logger.error(f"Could not add animation {handle_int:08X}")
+						continue
+
+					retargeted_animation = rig_retarget(
+						animation.animation_data, animation.raw_animation,
+						self.state.skeleton, self.state.rig
+					)
+
+					match self.export_settings.animation_space:
+						case Animation_Space.OBJECT:
+							add_animation_to_json(result, animation.animation_data, retargeted_animation)
+						case Animation_Space.LOCAL:
+							local_tracks = convert_obj_to_local(
+								animation.animation_data, retargeted_animation, self.state.skeleton
+							)
+
+							add_animation_to_json(result, animation.animation_data, local_tracks)
+
+				write_json_file(self.export_path / result_filename, result, self.export_settings.json_indent)
 
 			elif export_target == Export_Target.GLTF_RETARGET:
-				result_filename = f"s_animation_clip_{animation_handle:08X}.gltf"
+				result_filename = f"{result_filename}.gltf"
 
 				gltf, indices = create_gltf(self.state.skeleton, self.export_settings.animation_space, self.export_settings.name_convention)
 
-				add_animation(gltf, indices, result_tracks, self.export_settings.name_convention, f"{animation_handle:08X}")
+				for handle_int in animations_handles:
+					animation = self.get_animation(handle_int)
+
+					if animation is None:
+						logger.error(f"Could not add animation {handle_int:08X}")
+						continue
+
+					retargeted_animation = rig_retarget(
+						animation.animation_data, animation.raw_animation,
+						self.state.skeleton, self.state.rig
+					)
+
+					match self.export_settings.animation_space:
+						case Animation_Space.OBJECT:
+							add_animation_to_gltf(gltf, indices, retargeted_animation, self.export_settings.name_convention, f"{handle_int:08X}")
+						case Animation_Space.LOCAL:
+							local_tracks = convert_obj_to_local(
+								animation.animation_data, retargeted_animation, self.state.skeleton
+							)
+
+							add_animation_to_gltf(gltf, indices, local_tracks, self.export_settings.name_convention, f"{handle_int:08X}")
 
 				save_gltf(gltf, self.export_path / result_filename)
 

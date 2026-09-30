@@ -31,7 +31,6 @@ if __name__ == "__main__":
 
 	project_directory = Path(__file__).resolve().parent
 
-	# TODO: change init mechanism
 	try:
 		oodle.init([arguments.packages.parent / "bin" / "x64", project_directory])
 	except oodle.Oodle_Error as e:

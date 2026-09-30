@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 	QWidget, QVBoxLayout, QLineEdit, QListWidget, QListWidgetItem, QApplication,  QHBoxLayout, QLabel,
 	QListView, QComboBox, QAbstractItemView
 )
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal, Qt, QModelIndex
 
 from gui.style.lists import list_style, search_style
 from gui.worker_types import Tag_Model
@@ -87,6 +87,8 @@ class Tag_List_Widget(QWidget):
 
 	def set_tags(self, tags: list[Tag_Model]):
 		self.raw_tags = tags
+		self.list_view.clearSelection()
+		self.list_view.setCurrentIndex(QModelIndex())
 		self.apply_filter_and_sort()
 
 	def apply_filter_and_sort(self):
@@ -186,14 +188,25 @@ class Animation_List_Widget(QWidget):
 
 		self.sort_combo.currentIndexChanged.connect(self.apply_filter_and_sort)
 
-		self.list_view.currentItemChanged.connect(self.on_current_item_changed)
+		self.list_view.itemSelectionChanged.connect(self.on_selection_changed)
 
 		self.list_view.itemChanged.connect(self.on_item_changed)
 
 	def set_tags(self, animations: list[Tag_Model]):
-		self.raw_animations = list(animations)
+		self.list_view.blockSignals(True)
 
-		self.apply_filter_and_sort()
+		try:
+			self.raw_animations = []
+
+			self.list_view.clear()
+			self.raw_animations = animations
+
+			self.apply_filter_and_sort()
+
+		finally:
+			self.list_view.blockSignals(False)
+
+		self.selection_changed.emit()
 
 	def current_animation(self) -> Tag_Model | None:
 		item = self.list_view.currentItem()
@@ -322,12 +335,19 @@ class Animation_List_Widget(QWidget):
 	def animation_key(self, animation: Tag_Model):
 		return animation.handle
 
-	def on_current_item_changed(self, current: QListWidgetItem | None, previous: QListWidgetItem | None):
+	def on_selection_changed(self):
+		current = self.list_view.currentItem()
+
 		if current is None:
 			return
 
+		if not current.isSelected():
+			return
+
 		animation = current.data(Qt.ItemDataRole.UserRole)
+
 		self.tag_selected.emit(animation.handle)
+
 
 	def on_item_changed(self, item: QListWidgetItem):
 		self.selection_changed.emit()

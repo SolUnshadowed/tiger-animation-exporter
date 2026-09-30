@@ -296,7 +296,7 @@ def create_armature_hierarchy(
 	return fake_root_index, bone_indices
 
 
-def add_animation(
+def add_animation_to_gltf(
 	gltf: GLTF2,
 	bone_indices: dict[str, int],
 	animation_data: list[Bone_Tracks],
