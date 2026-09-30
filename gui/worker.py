@@ -530,7 +530,7 @@ class Package_Worker(QObject):
 			logger.error("No skeleton and rig selected")
 			return
 
-		self.loading_waiting.emit("Loading")
+		self.loading_waiting.emit("Exporting animations")
 		progress = Progress()
 
 		if not self.export_path.exists():
@@ -540,79 +540,99 @@ class Package_Worker(QObject):
 
 		result_filename = f"entity_{self.state.entity_handle:08X}"
 
-		if export_target == Export_Target.JSON_RAW:
-			logger.info(f"Used export target: {Export_Target.JSON_RAW.value}")
+		total_animations = len(animations_handles)
+		progress.update(0, 0, "Exporting animations")
 
-			result_filename = f"{result_filename}.json"
-			# no bones annotations, because these are controls
-			result = []
-			for handle_int in animations_handles:
-				animation = self.get_animation(handle_int)
-				if animation is not None:
-					add_animation_to_json(result, animation.animation_data, animation.raw_animation)
-				else:
-					logger.error(f"Could not add animation {handle_int:08X}")
+		self.loading_progress.emit(progress)
 
-			write_json_file(self.export_path / result_filename, result, self.export_settings.json_indent)
+		try:
 
-		else:
-			logger.info(f"Used export target: {export_target.value}")
+			if export_target == Export_Target.JSON_RAW:
+				logger.info(f"Used export target: {Export_Target.JSON_RAW.value}")
 
-			if export_target == Export_Target.JSON_RETARGET:
-				result_filename =  f"{result_filename}.json"
-
+				result_filename = f"{result_filename}.json"
+				# no bones annotations, because these are controls
 				result = []
-				for handle_int in animations_handles:
+				for i, handle_int in enumerate(animations_handles, 1):
 					animation = self.get_animation(handle_int)
-
-					if animation is None:
+					if animation is not None:
+						add_animation_to_json(result, animation.animation_data, animation.raw_animation)
+					else:
 						logger.error(f"Could not add animation {handle_int:08X}")
-						continue
 
-					retargeted_animation = rig_retarget(
-						animation.animation_data, animation.raw_animation,
-						self.state.skeleton, self.state.rig
-					)
+					progress.update(i, total_animations, f"Exporting animations ({i}/{total_animations})")
 
-					match self.export_settings.animation_space:
-						case Animation_Space.OBJECT:
-							add_animation_to_json(result, animation.animation_data, retargeted_animation)
-						case Animation_Space.LOCAL:
-							local_tracks = convert_obj_to_local(
-								animation.animation_data, retargeted_animation, self.state.skeleton
-							)
-
-							add_animation_to_json(result, animation.animation_data, local_tracks)
-
+				self.loading_waiting.emit(f"Saving file {result_filename}")
 				write_json_file(self.export_path / result_filename, result, self.export_settings.json_indent)
 
-			elif export_target == Export_Target.GLTF_RETARGET:
-				result_filename = f"{result_filename}.gltf"
+			else:
+				logger.info(f"Used export target: {export_target.value}")
 
-				gltf, indices = create_gltf(self.state.skeleton, self.export_settings.animation_space, self.export_settings.name_convention)
+				if export_target == Export_Target.JSON_RETARGET:
+					result_filename =  f"{result_filename}.json"
 
-				for handle_int in animations_handles:
-					animation = self.get_animation(handle_int)
+					result = []
+					for i, handle_int in enumerate(animations_handles, 1):
+						animation = self.get_animation(handle_int)
 
-					if animation is None:
-						logger.error(f"Could not add animation {handle_int:08X}")
-						continue
+						if animation is None:
+							logger.error(f"Could not add animation {handle_int:08X}")
+							continue
 
-					retargeted_animation = rig_retarget(
-						animation.animation_data, animation.raw_animation,
-						self.state.skeleton, self.state.rig
-					)
+						retargeted_animation = rig_retarget(
+							animation.animation_data, animation.raw_animation,
+							self.state.skeleton, self.state.rig
+						)
 
-					match self.export_settings.animation_space:
-						case Animation_Space.OBJECT:
-							add_animation_to_gltf(gltf, indices, retargeted_animation, self.export_settings.name_convention, f"{handle_int:08X}")
-						case Animation_Space.LOCAL:
-							local_tracks = convert_obj_to_local(
-								animation.animation_data, retargeted_animation, self.state.skeleton
-							)
+						match self.export_settings.animation_space:
+							case Animation_Space.OBJECT:
+								add_animation_to_json(result, animation.animation_data, retargeted_animation)
+							case Animation_Space.LOCAL:
+								local_tracks = convert_obj_to_local(
+									animation.animation_data, retargeted_animation, self.state.skeleton
+								)
 
-							add_animation_to_gltf(gltf, indices, local_tracks, self.export_settings.name_convention, f"{handle_int:08X}")
+								add_animation_to_json(result, animation.animation_data, local_tracks)
 
-				save_gltf(gltf, self.export_path / result_filename)
+						progress.update(i, total_animations, f"Exporting animations ({i}/{total_animations})")
+
+					self.loading_waiting.emit(f"Saving file {result_filename}")
+					write_json_file(self.export_path / result_filename, result, self.export_settings.json_indent)
+
+				elif export_target == Export_Target.GLTF_RETARGET or export_target == Export_Target.GLB_RETARGET:
+					ext = "gltf" if export_target == Export_Target.GLTF_RETARGET else "glb"
+					result_filename = f"{result_filename}.{ext}"
+
+					gltf, indices = create_gltf(self.state.skeleton, self.export_settings.animation_space, self.export_settings.name_convention)
+
+					for i, handle_int in enumerate(animations_handles, 1):
+						animation = self.get_animation(handle_int)
+
+						if animation is None:
+							logger.error(f"Could not add animation {handle_int:08X}")
+							continue
+
+						retargeted_animation = rig_retarget(
+							animation.animation_data, animation.raw_animation,
+							self.state.skeleton, self.state.rig
+						)
+
+						match self.export_settings.animation_space:
+							case Animation_Space.OBJECT:
+								add_animation_to_gltf(gltf, indices, retargeted_animation, self.export_settings.name_convention, f"{handle_int:08X}")
+							case Animation_Space.LOCAL:
+								local_tracks = convert_obj_to_local(
+									animation.animation_data, retargeted_animation, self.state.skeleton
+								)
+
+								add_animation_to_gltf(gltf, indices, local_tracks, self.export_settings.name_convention, f"{handle_int:08X}")
+
+						progress.update(i, total_animations, f"Exporting animations ({i}/{total_animations})")
+
+					self.loading_waiting.emit(f"Saving file {result_filename}")
+					save_gltf(gltf, self.export_path / result_filename)
+
+		except Exception as e:
+			logger.error(e)
 
 		self.loading_hide.emit()

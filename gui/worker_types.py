@@ -38,10 +38,13 @@ class Tag_Model:
 			return "{:.2f} GB".format(size / 1073741824)
 
 	def to_line(self, fmt: str='') -> str:
-		if fmt == "no_number":
-			return "{:X} (ref {:X})\n({})".format(self.handle, self.ref, self.size_to_human(self.size))
+		if fmt == "handle_and_size":
+			return "{:08X} ({})".format(self.handle, self.size_to_human(self.size))
 
-		return "{}: {:X}\n(ref {:X})\n({})".format(self.number, self.handle, self.ref, self.size_to_human(self.size))
+		if fmt == "no_number":
+			return "{:08X} (ref {:X})\n({})".format(self.handle, self.ref, self.size_to_human(self.size))
+
+		return "{}: {:08X}\n(ref {:X})\n({})".format(self.number, self.handle, self.ref, self.size_to_human(self.size))
 
 
 @dataclass(slots=True)

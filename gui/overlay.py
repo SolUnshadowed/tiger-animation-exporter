@@ -93,7 +93,7 @@ class Loading_Overlay(QFrame):
 		else:
 			self.progress.setRange(0, 0)
 
-	def update(self, current: int, total: int, text: str = "Loading"):
+	def update_overlay(self, current: int, total: int, text: str = "Loading"):
 		self._timer.stop()
 		self._progress = None
 

@@ -229,7 +229,7 @@ class Animation_List_Widget(QWidget):
 
 		return result
 
-	def clear_selection(self):
+	def uncheck_all(self):
 		self.list_view.blockSignals(True)
 
 		try:
@@ -241,7 +241,7 @@ class Animation_List_Widget(QWidget):
 
 		self.selection_changed.emit()
 
-	def select_all(self):
+	def check_all(self):
 		self.list_view.blockSignals(True)
 
 		try:
@@ -309,7 +309,7 @@ class Animation_List_Widget(QWidget):
 			new_current_item = None
 
 			for animation in animations:
-				item = QListWidgetItem(f"{animation.handle:08X}")
+				item = QListWidgetItem(animation.to_line("handle_and_size"))
 
 				item.setData(Qt.ItemDataRole.UserRole, animation)
 				item.setFlags(item.flags()| Qt.ItemFlag.ItemIsUserCheckable) # make selectable
@@ -339,9 +339,6 @@ class Animation_List_Widget(QWidget):
 		current = self.list_view.currentItem()
 
 		if current is None:
-			return
-
-		if not current.isSelected():
 			return
 
 		animation = current.data(Qt.ItemDataRole.UserRole)

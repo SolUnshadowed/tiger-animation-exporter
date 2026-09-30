@@ -5,6 +5,7 @@ class Export_Target(str, Enum):
 	JSON_RAW = "json_raw"
 	JSON_RETARGET = "json_retarget"
 	GLTF_RETARGET = "gltf_retarget"
+	GLB_RETARGET = "glb_retarget"
 
 
 class Bone_Name_Convention(str, Enum):
