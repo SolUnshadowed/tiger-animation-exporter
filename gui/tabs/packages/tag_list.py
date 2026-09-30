@@ -46,6 +46,7 @@ class Tag_List_Widget(QWidget):
 
 
 		self.list_view.setStyleSheet(list_style)
+		self.list_view.setSpacing(4)
 		self.searchbar.setStyleSheet(search_style)
 		self.sort_combo = QComboBox()
 		self.sort_combo.addItem("id (asc)", userData=Sort_Params(SORT_FIELD.NUMBER, SORT_TYPE.ASC))
@@ -170,6 +171,7 @@ class Animation_List_Widget(QWidget):
 
 		self.list_view = QListWidget()
 		self.list_view.setStyleSheet(list_style)
+		self.list_view.setSpacing(4)
 
 		self.list_view.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 

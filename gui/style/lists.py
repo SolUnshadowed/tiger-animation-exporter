@@ -10,7 +10,6 @@ QListWidget::item {
 	color: #212529;
 	border: 1px solid #000000;
 	padding: 8px 12px;
-	margin-bottom: 4px;
 }
 QListWidget::item:hover {
 	background-color: #e8f0fe;

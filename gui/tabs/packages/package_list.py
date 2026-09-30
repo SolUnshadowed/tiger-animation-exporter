@@ -20,6 +20,7 @@ class Package_List_Widget(QWidget):
 		self.list_view = QListWidget()
 
 		self.list_view.setStyleSheet(list_style)
+		self.list_view.setSpacing(4)
 		self.searchbar.setStyleSheet(search_style)
 
 		layout = QVBoxLayout(self)
