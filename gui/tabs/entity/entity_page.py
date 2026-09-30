@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-	QWidget, QVBoxLayout, QSplitter, QPlainTextEdit, QPushButton
+	QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QPlainTextEdit, QPushButton
 )
 from PySide6.QtCore import Qt, Slot
 
@@ -8,7 +8,7 @@ from gui.tabs.entity.entity_title import Entity_Title
 from gui.canvas_frame.canvas_frame import Canvas_Frame
 
 from gui.worker_types import Animation_Model
-
+from gui.style.button import button_style
 
 class Entity_Page(QWidget):
 	entity_title: Entity_Title
@@ -56,13 +56,27 @@ class Entity_Page(QWidget):
 		)
 
 		self.export_button = QPushButton("Export")
+		self.export_button.setStyleSheet(button_style)
 
-		right_layout.addWidget(self.stats_area)
+		right_layout.addWidget(self.animations_list)
+
+		uncheck_all_button = QPushButton("Uncheck all")
+		uncheck_all_button.setStyleSheet(button_style)
+		uncheck_all_button.clicked.connect(self.animations_list.uncheck_all)
+		check_all_button = QPushButton("Check all")
+		check_all_button.setStyleSheet(button_style)
+		check_all_button.clicked.connect(self.animations_list.check_all)
+
+		list_buttons_layout = QHBoxLayout()
+		list_buttons_layout.addWidget(uncheck_all_button)
+		list_buttons_layout.addWidget(check_all_button)
+
+		right_layout.addLayout(list_buttons_layout)
 		right_layout.addWidget(self.export_button)
 		right_layout_container.setLayout(right_layout)
 
 		main_splitter.addWidget(left_splitter)
-		main_splitter.addWidget(self.animations_list)
+		main_splitter.addWidget(self.stats_area)
 		main_splitter.addWidget(right_layout_container)
 		main_splitter.setStretchFactor(0, 2)
 		main_splitter.setStretchFactor(1, 1)
