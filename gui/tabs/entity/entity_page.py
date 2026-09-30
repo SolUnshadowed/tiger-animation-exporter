@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Slot
 
-from gui.tabs.packages.tag_list import Tag_List_Widget
+from gui.tabs.packages.tag_list import Tag_List_Widget, Animation_List_Widget
 from gui.tabs.entity.entity_title import Entity_Title
 from gui.canvas_frame.canvas_frame import Canvas_Frame
 
@@ -12,7 +12,7 @@ from gui.worker_types import Animation_Model
 
 class Entity_Page(QWidget):
 	entity_title: Entity_Title
-	animations_list: Tag_List_Widget
+	animations_list: Animation_List_Widget
 	stats_area: QPlainTextEdit
 	export_button: QPushButton
 	render: Canvas_Frame
@@ -28,8 +28,7 @@ class Entity_Page(QWidget):
 
 		self.render = Canvas_Frame()
 
-		self.animations_list = Tag_List_Widget(fmt="no_number")
-
+		self.animations_list = Animation_List_Widget()
 
 		main_splitter = QSplitter(Qt.Orientation.Horizontal)
 
@@ -57,7 +56,6 @@ class Entity_Page(QWidget):
 		)
 
 		self.export_button = QPushButton("Export")
-		#self.export_button.clicked.connect(self.export_animation)
 
 		right_layout.addWidget(self.stats_area)
 		right_layout.addWidget(self.export_button)

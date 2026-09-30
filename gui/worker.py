@@ -5,6 +5,7 @@ from PySide6.QtCore import Signal, QObject, Slot
 from pathlib import Path
 from dataclasses import dataclass
 
+from libs.progress import Progress
 from libs.tiger_pkg.manager.package_manager import Package_Manager, PROGRESS as Package_Manager_Progress
 from libs.tiger_pkg.game_version import Game_Version
 from libs.tiger_pkg.enums import Package_Platform
@@ -60,7 +61,6 @@ class Cached_Animation:
 	animation_data: Animation_Data
 	raw_animation: list[Bone_Tracks | None]
 	object_space_animation: list[Bone_Tracks]
-	local_space_animation: list[Bone_Tracks]
 
 
 @dataclass
@@ -90,7 +90,7 @@ class Package_Worker(QObject):
 	entity_data_emitter = Signal(object)
 	animations_list_emitter = Signal(list)
 	render_data_emitter = Signal(object)
-	animation_emitter = Signal(object)
+	gui_animation_data_emitter = Signal(object)
 	worker_started = Signal(bool)
 	loading_waiting = Signal(str)
 	loading_progress = Signal(object)
@@ -451,13 +451,13 @@ class Package_Worker(QObject):
 
 		self.loading_hide.emit()
 
-	@Slot("quint32")
-	def get_animation(self, animation_handle_int: int):
+
+	def get_animation(
+		self, animation_handle_int: int
+	) -> None | Cached_Animation:
 		if self.state is None:
 			logger.error("No skeleton and rig selected")
-			return
-
-		self.loading_waiting.emit("Loading")
+			return None
 
 		animation_handle = Tag_Handle(animation_handle_int)
 
@@ -466,37 +466,56 @@ class Package_Worker(QObject):
 
 			animation = read_animation(
 				reader,
-			   	self.manager.version,
+				self.manager.version,
 				self.manager.get_or_load_pkg(animation_handle.package_id).endianness
 			)
 
-			tracks = decode_animation(animation)
+			raw_tracks = decode_animation(animation)
 
-			retargeted_animation = rig_retarget(animation, tracks, self.state.skeleton, self.state.rig)
+			retargeted_animation = rig_retarget(animation, raw_tracks, self.state.skeleton, self.state.rig)
 
-			local_tracks = convert_obj_to_local(animation, retargeted_animation, self.state.skeleton)
-
-			self.state.animation = Cached_Animation(
+			return Cached_Animation(
 				animation_handle=animation_handle_int,
 				animation_data=animation,
-				raw_animation=tracks,
-				object_space_animation=retargeted_animation,
-				local_space_animation=local_tracks
-			)
-
-			self.animation_emitter.emit(
-				Animation_Model(
-					animation_handle_int,
-					animation,
-					local_tracks
-				)
+				raw_animation=raw_tracks,
+				object_space_animation=retargeted_animation
 			)
 		except Exception as e:
 			logger.error(e)
+			return None
+
+	@Slot("quint32")
+	def get_gui_ready_animation(self, animation_handle_int: int):
+		self.loading_waiting.emit("Loading")
+
+		if self.state is None:
+			logger.error("No skeleton and rig selected")
+			return
+
+		cached_animation = self.get_animation(animation_handle_int)
+
+		if cached_animation is None:
+			logger.error("Could not load animation")
+			return
+
+		self.state.animation = cached_animation
+
+		local_tracks = convert_obj_to_local(
+			cached_animation.animation_data, cached_animation.object_space_animation, self.state.skeleton
+		)
+
+		self.gui_animation_data_emitter.emit(
+			Animation_Model(
+				animation_handle_int,
+				cached_animation.animation_data,
+				local_tracks
+			)
+		)
 
 		self.loading_hide.emit()
 
-	def export_animation(self):
+	@Slot(list)
+	def export_animations(self, animations_handles: list[int]):
 		if self.export_path is None:
 			logger.error("No export path")
 			return
@@ -510,6 +529,7 @@ class Package_Worker(QObject):
 			return
 
 		self.loading_waiting.emit("Loading")
+		progress = Progress()
 
 		if not self.export_path.exists():
 			self.export_path.mkdir(parents=True, exist_ok=True)

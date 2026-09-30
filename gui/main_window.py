@@ -23,6 +23,7 @@ class Main_Window(QWidget):
 
 	settings_emitter = Signal(object)
 	request_package_list_emitter = Signal()
+	exported_animation_emitter = Signal(list)
 
 	def __init__(self, worker, cache_directory: Path):
 		super().__init__()
@@ -79,16 +80,27 @@ class Main_Window(QWidget):
 		self.worker.render_data_emitter.connect(self.entity_page.render.set_render_data)
 		self.worker.render_data_emitter.connect(self.switch_tab_to_entity)
 
-		self.entity_page.animations_list.tag_selected.connect(self.worker.get_animation)
-		self.worker.animation_emitter.connect(self.entity_page.set_animation)
+		self.entity_page.animations_list.tag_selected.connect(self.worker.get_gui_ready_animation)
+		self.worker.gui_animation_data_emitter.connect(self.entity_page.set_animation)
 
 		self.entity_page.render.animation_data.connect(self.update_animation_data)
 
-		self.entity_page.export_button.clicked.connect(self.worker.export_animation)
+		self.entity_page.export_button.clicked.connect(self.export_animation)
 
 		self.service_thread.start()
 
 		self.settings_emitter.connect(self.worker.set_data)
+
+	@Slot()
+	def export_animation(self):
+		selected_animations = self.entity_page.animations_list.selected_animations()
+
+		self.exported_animation_emitter.emit(
+			[
+				animation.handle
+				for animation in selected_animations
+			]
+		)
 
 	@Slot(str)
 	def update_animation_data(self, string: str):
