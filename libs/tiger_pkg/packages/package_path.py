@@ -40,7 +40,6 @@ class Package_Path:
 		except ValueError:
 			return None
 
-
 		return Package_Path(
 			platform=platform,
 			name=name,

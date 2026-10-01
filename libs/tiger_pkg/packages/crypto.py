@@ -36,7 +36,7 @@ class Package_GCM:
 
 		self.nonce[0] ^= (package_id >> 8) & 0xFF
 
-		#if self.version in (Game_Version.D2_BETA, Game_Version.D2_SK):  # not implemented
+		#if self.version in (Game_Version.D2_BETA, Game_Version.D2_SK):  # not implemented, TODO
 		#		self.nonce[1] = 0xF9
 		#else:
 		self.nonce[1] = 0xEA

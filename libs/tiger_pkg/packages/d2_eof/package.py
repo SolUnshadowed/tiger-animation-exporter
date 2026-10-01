@@ -31,7 +31,6 @@ class Package_D2_EOF(Package_Common_D2):
 			override_endianness=self.endianness
 		)
 
-
 		reader.seek(header.block_table_offset)
 		blocks: list[Block_Header] = reader.read_struct_array(
 			Block_Header,

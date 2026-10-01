@@ -148,16 +148,16 @@ class Oodle:
 
 
 # global instances
-_OODLE_3: Oodle | None = None
-_OODLE_9: Oodle | None = None
-_LIBRARY_PATHS: list[Path] = []
-_INITIALIZED = False
+OODLE_3: Oodle | None = None
+OODLE_9: Oodle | None = None
+LIBRARY_PATHS: list[Path] = []
+INITIALIZED = False
 
 
 def init(library_paths: list[Path | str] | str | Path):
-	global _LIBRARY_PATHS, _INITIALIZED
+	global LIBRARY_PATHS, INITIALIZED
 
-	if _INITIALIZED:
+	if INITIALIZED:
 		raise Oodle_Already_Initialised_Error("Oodle module is already initialized")
 
 	if isinstance(library_paths, (list, tuple)):
@@ -188,28 +188,28 @@ def init(library_paths: list[Path | str] | str | Path):
 		for p in skipped:
 			logger.warning(f"Ignoring invalid Oodle search path: {p}")
 
-	_LIBRARY_PATHS = paths
-	_INITIALIZED = True
+	LIBRARY_PATHS = paths
+	INITIALIZED = True
 
 
 def get_oodle(version: Oodle_Version) -> Oodle:
-	global _OODLE_3, _OODLE_9, _INITIALIZED
+	global OODLE_3, OODLE_9, INITIALIZED
 
-	if not _INITIALIZED:
+	if not INITIALIZED:
 		raise Oodle_Not_Initialised_Error("Module is not initialized")
 
 	match version:
 		case Oodle_Version.V3:
-			if _OODLE_3 is None:
-				_OODLE_3 = Oodle(Oodle_Version.V3, _LIBRARY_PATHS)
+			if OODLE_3 is None:
+				OODLE_3 = Oodle(Oodle_Version.V3, LIBRARY_PATHS)
 
-			return _OODLE_3
+			return OODLE_3
 
 		case Oodle_Version.V9:
-			if _OODLE_9 is None:
-				_OODLE_9 = Oodle(Oodle_Version.V9, _LIBRARY_PATHS)
+			if OODLE_9 is None:
+				OODLE_9 = Oodle(Oodle_Version.V9, LIBRARY_PATHS)
 
-			return _OODLE_9
+			return OODLE_9
 
 
 # todo check block sizes

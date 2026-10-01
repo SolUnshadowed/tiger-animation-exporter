@@ -9,8 +9,6 @@ from libs.tiger_pkg.packages.d1_roi.structures import Package_Header, Block_Head
 from libs.tiger_pkg.packages.block_cache import Block_Cache
 
 
-counter = 0
-
 class Package_D1_ROI(Package):
 	file: BinaryIO
 	reader: Binary_Reader

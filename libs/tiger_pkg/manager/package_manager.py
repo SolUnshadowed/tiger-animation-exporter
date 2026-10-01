@@ -18,6 +18,7 @@ from libs.tiger_pkg.packages.d1_devalpha.package import Package_D1_DEVALPHA
 from libs.tiger_pkg.packages.d1_roi.package import Package_D1_ROI
 from libs.tiger_pkg.packages.d2_eof.package import Package_D2_EOF
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -79,7 +80,7 @@ def _process_single_package(
 	pkg_id, p_path, version = args
 	package = game_version_to_package[version](p_path.to_str())
 	entries = (package.package_id, list(package.get_entries()))
-	#redaction_level = (pkg.pkg_id(), pkg.redaction_level())
+	#redaction_level = (pkg.pkg_id(), pkg.redaction_level()) # TODO
 
 	hashes = [
 		(
