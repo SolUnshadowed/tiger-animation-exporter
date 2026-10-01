@@ -228,12 +228,14 @@ def rig_retarget(
 	# animation properties
 	frames = animation_data.animation_header.frame_count
 	# object properties
-	object_matrix = glm.mat4()
+	identity_matrix = glm.mat4()
 	aim_vector = glm.vec3(0, 0, 1)
 	neutral_aim_vector = glm.vec3(0, 0, 1)
 	# compute skeleton cache
 	bones_relations = skeleton.node_defs
+	# rest pose in object space
 	bone_object_space_matrices = skeleton.default_obj_space_matrices
+	# rest pose in parent space
 	bone_to_parent_offset = skeleton.bone_to_parent_offset
 	num_bones = bones_relations.length
 	# compute rig and skeleton cache
@@ -334,7 +336,7 @@ def rig_retarget(
 								logger.warning(f"point_and_orient // tr constraint 'relative': bone {parent_bone_index} is not updated yet!")
 								continue
 
-							parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else object_matrix
+							parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else identity_matrix
 							origin_tr = glm_get_translation(parent_matrix)
 
 						case Space_Type.PARENT: # 1
@@ -354,7 +356,7 @@ def rig_retarget(
 							origin_tr = parent_tr + parent_rot * parent_offset_tr
 
 						case Space_Type.OBJECT:  # 2
-							origin_tr = glm_get_translation(object_matrix)
+							origin_tr = glm_get_translation(bone_object_space_matrices[0])
 
 						case Space_Type.BIND:  # 4
 							bind_matrix = bone_object_space_matrices[bone_index]
@@ -388,7 +390,7 @@ def rig_retarget(
 								logger.warning(f"point_and_orient // rot constraint 'relative': bone {parent_bone_index} is not updated yet!")
 								continue
 
-							parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else object_matrix
+							parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else identity_matrix
 							origin_rot = glm_get_quat(parent_matrix)
 
 						case Space_Type.PARENT:  # 1
@@ -407,7 +409,7 @@ def rig_retarget(
 							origin_rot = parent_rot * parent_offset_rot
 
 						case Space_Type.OBJECT:  # 2
-							origin_rot = glm_get_quat(object_matrix)
+							origin_rot = glm_get_quat(bone_object_space_matrices[0])
 
 						case Space_Type.BIND:  # 4
 							bind_matrix = bone_object_space_matrices[bone_index]
@@ -461,7 +463,7 @@ def rig_retarget(
 								logger.warning(f"parent // rot constraint 'relative': bone {parent_bone_index} is not updated yet!")
 								continue
 
-							parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else object_matrix
+							parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else identity_matrix
 							origin_tr = glm_get_translation(parent_matrix)
 							origin_rot = glm_get_quat(parent_matrix)
 
@@ -472,7 +474,7 @@ def rig_retarget(
 								logger.warning(f"parent // rot constraint 'parent': bone {parent_bone_index} is not updated yet!")
 								continue
 
-							parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else object_matrix
+							parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else identity_matrix
 							parent_tr = glm_get_translation(parent_matrix)
 							parent_rot = glm_get_quat(parent_matrix)
 
@@ -483,17 +485,17 @@ def rig_retarget(
 							origin_tr = parent_tr + parent_rot * parent_offset_tr
 							origin_rot = parent_rot * parent_offset_rot
 
-						case  Space_Type.OBJECT:  # 2
-							origin_tr = glm_get_translation(object_matrix)
-							origin_rot = glm_get_quat(object_matrix)
+						case Space_Type.OBJECT:  # 2
+							origin_tr = glm_get_translation(bone_object_space_matrices[0])
+							origin_rot = glm_get_quat(bone_object_space_matrices[0])
 
-						case  Space_Type.BIND:  # 4
+						case Space_Type.BIND:  # 4
 							bind_matrix = bone_object_space_matrices[bone_index]
 
 							origin_tr = glm_get_translation(bind_matrix)
 							origin_rot = glm_get_quat(bind_matrix)
 
-						case  Space_Type.AVERAGE:  # 5
+						case Space_Type.AVERAGE:  # 5
 							parent_bone_index_0 = constraint.rot_space_0.bone_index_0
 							parent_bone_index_1 = constraint.rot_space_0.bone_index_1
 
@@ -535,7 +537,7 @@ def rig_retarget(
 										logger.warning(f"parent // tr constraint 'relative': bone {parent_bone_index} is not updated yet!")
 										continue
 
-									parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else object_matrix
+									parent_matrix = skeleton_bones_matrices[parent_bone_index] if parent_bone_index > -1 else identity_matrix
 									origin_tr = glm_get_translation(parent_matrix)
 
 								case Space_Type.PARENT:
