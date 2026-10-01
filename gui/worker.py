@@ -32,10 +32,10 @@ from src.tag_readers.render_globals.read_s_vertex_input_element_sets import read
 from src.tag_readers.render_globals.read_s_vertex_input_layout_mapping import read_s_vertex_input_layout_mapping, S_Vertex_Layout
 
 from src.decode_animation.decode_animation import decode_animation, Bone_Tracks
-from src.export.animation_export.convert_animation_object_to_local import convert_obj_to_local
-from src.export.animation_export.gltf_export import create_gltf, add_animation_to_gltf, save_gltf
-from src.export.animation_export.export_animation import add_animation_to_json, write_json_file
-from src.export.animation_export.enums import Bone_Name_Convention, Animation_Space, Export_Target
+from src.export.animation.convert_animation_object_to_local import convert_obj_to_local
+from src.export.animation.gltf_export import create_gltf, add_animation_to_gltf, save_gltf
+from src.export.animation.json_export import add_animation_to_json, write_json_file
+from src.export.animation.enums import Bone_Name_Convention, Animation_Space, Export_Target
 from src.runtime_rig.rig_retarget import rig_retarget
 from src.scanner.animation_scanner import Animation_Scanner, PROGRESS as Animation_Scanner_Progress
 from src.scanner.classes import s_pattern_refs, s_dynamic_model_component_secondary_classes
