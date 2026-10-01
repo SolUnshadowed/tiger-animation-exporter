@@ -217,8 +217,6 @@ def get_frame_value(attr: np.ndarray, frame_index: int):
 	return attr[frame_index % attr.shape[0]]
 
 
-# TODO: figure out what to do with scales and how to prevent scale error accumulation after matrix multiplication if scale
-# is close to 1.0 but is not exactly equal
 def rig_retarget(
 	animation_data: Animation_Data,
 	controls_data: list[Bone_Tracks | None],
