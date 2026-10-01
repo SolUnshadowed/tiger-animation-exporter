@@ -29,17 +29,17 @@ class Loading_Overlay(QFrame):
 		self.label = QLabel("Loading...")
 		self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-		self.progress = QProgressBar()
-		self.progress.setTextVisible(False)
+		self.progress_bar = QProgressBar()
+		self.progress_bar.setTextVisible(False)
 
 		layout.addWidget(self.label)
-		layout.addWidget(self.progress)
+		layout.addWidget(self.progress_bar)
 
-		self._timer = QTimer(self)
-		self._timer.setInterval(50)
-		self._timer.timeout.connect(self._poll)
+		self.timer = QTimer(self)
+		self.timer.setInterval(50)
+		self.timer.timeout.connect(self._poll)
 
-		self._progress: Progress | None = None
+		self.watched_progress: Progress | None = None
 
 		parent.installEventFilter(self)
 		self.setGeometry(parent.rect())
@@ -58,45 +58,45 @@ class Loading_Overlay(QFrame):
 		self.show()
 
 	def hide_overlay(self):
-		self._timer.stop()
+		self.timer.stop()
 		self.hide()
 
 	def start_waiting(self, text="Loading"):
-		self._timer.stop()
-		self._progress = None
+		self.timer.stop()
+		self.watched_progress = None
 
 		self.label.setText(text)
-		self.progress.setRange(0, 0)
+		self.progress_bar.setRange(0, 0)
 
 		self.show_overlay(text)
 
 	def start_polling(self, progress: Progress):
-		self._progress = progress
+		self.watched_progress = progress
 
-		self.progress.setRange(0, 0)
-		self.progress.setValue(0)
+		self.progress_bar.setRange(0, 0)
+		self.progress_bar.setValue(0)
 
 		self.show_overlay()
-		self._timer.start()
+		self.timer.start()
 
 	def _poll(self):
-		if self._progress is None:
+		if self.watched_progress is None:
 			return
 
-		current, total, message = self._progress.get()
+		current, total, message = self.watched_progress.get()
 
 		self.label.setText(message)
 
 		if total > 0:
-			self.progress.setRange(0, total)
-			self.progress.setValue(current)
+			self.progress_bar.setRange(0, total)
+			self.progress_bar.setValue(current)
 		else:
-			self.progress.setRange(0, 0)
+			self.progress_bar.setRange(0, 0)
 
 	def update_overlay(self, current: int, total: int, text: str = "Loading"):
-		self._timer.stop()
-		self._progress = None
+		self.timer.stop()
+		self.watched_progress = None
 
 		self.label.setText(text)
-		self.progress.setRange(0, total)
-		self.progress.setValue(current)
+		self.progress_bar.setRange(0, total)
+		self.progress_bar.setValue(current)

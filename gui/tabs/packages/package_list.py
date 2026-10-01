@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import (
-	QWidget, QVBoxLayout, QLineEdit, QListWidget, QListWidgetItem, QApplication,  QHBoxLayout, QLabel,
-	QListView
+	QWidget, QVBoxLayout, QLineEdit, QListWidget, QListWidgetItem,  QHBoxLayout
 )
 from PySide6.QtCore import Signal, Qt
 

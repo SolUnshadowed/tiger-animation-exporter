@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from enum import IntEnum
 from PySide6.QtWidgets import (
-	QWidget, QVBoxLayout, QLineEdit, QListWidget, QListWidgetItem, QApplication,  QHBoxLayout, QLabel,
-	QListView, QComboBox, QAbstractItemView
+	QWidget, QVBoxLayout, QLineEdit, QListWidget, QListWidgetItem, QHBoxLayout, QLabel,
+	QComboBox, QAbstractItemView
 )
 from PySide6.QtCore import Signal, Qt, QModelIndex
 
@@ -140,7 +140,7 @@ class Animation_List_Widget(QWidget):
 
 		self.raw_animations = []
 		self.searchbar = QLineEdit()
-		self.searchbar.setPlaceholderText("Filter by animation")
+		self.searchbar.setPlaceholderText("Filter by handle")
 		self.searchbar.setStyleSheet(search_style)
 		self.sort_label = QLabel("Sort by:")
 
@@ -191,7 +191,6 @@ class Animation_List_Widget(QWidget):
 		self.sort_combo.currentIndexChanged.connect(self.apply_filter_and_sort)
 
 		self.list_view.itemSelectionChanged.connect(self.on_selection_changed)
-
 		self.list_view.itemChanged.connect(self.on_item_changed)
 
 	def set_tags(self, animations: list[Tag_Model]):
@@ -204,7 +203,6 @@ class Animation_List_Widget(QWidget):
 			self.raw_animations = animations
 
 			self.apply_filter_and_sort()
-
 		finally:
 			self.list_view.blockSignals(False)
 
@@ -267,7 +265,7 @@ class Animation_List_Widget(QWidget):
 			filtered = [
 				animation
 				for animation in self.raw_animations
-				if self.matches_filter(animation, filter_text, )
+				if self.matches_filter(animation, filter_text)
 			]
 
 		filtered.sort(

@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Slot, Qt
 from gui.worker_types import Entity_Data
 
+
 class Entity_Title(QWidget):
 	tag_label: QLabel
 	package_label: QLabel

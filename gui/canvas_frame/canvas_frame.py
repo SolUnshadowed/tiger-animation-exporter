@@ -232,7 +232,7 @@ class Canvas_Frame(QWidget):
 			self.skeleton_helper = Custom_Skeleton_Helper(self.root_bone, 0.5)
 			self.scene.add(self.skeleton_helper)
 
-			inv_bind_matrices = [transform_to_np_matrix(transform) for transform in skeleton.default_inv_obj_space_tr]
+			#inv_bind_matrices = [transform_to_np_matrix(transform) for transform in skeleton.default_inv_obj_space_tr]
 
 			#self.skeleton = gfx.Skeleton(self.bones, inv_bind_matrices)
 			self.skeleton = gfx.Skeleton(self.bones)
@@ -384,8 +384,7 @@ class Canvas_Frame(QWidget):
 		if self.render_status:
 			self.canvas.request_draw(self.animate)
 
-	def closeEvent(self, event):
+	def shutdown(self):
 		self.render_status = False
 		self.scene.clear()
 		self.canvas.close()
-		event.accept()

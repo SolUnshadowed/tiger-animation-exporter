@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from PySide6.QtWidgets import (
-	QWidget, QVBoxLayout, QApplication, QHBoxLayout, QSplitter, QTabWidget, QPlainTextEdit
+	QWidget, QHBoxLayout, QTabWidget
 )
-from PySide6.QtCore import Signal, Qt, QThread, Slot
+from PySide6.QtCore import Signal, QThread, Slot
 
 from gui.tabs.packages.packages_page import Packages_Page
 from gui.tabs.entity.entity_page import Entity_Page
@@ -58,12 +58,11 @@ class Main_Window(QWidget):
 		self.worker = worker
 		self.worker.moveToThread(self.service_thread)
 
-		worker.loading_waiting.connect(self.overlay.start_waiting)
-		worker.loading_progress.connect(self.overlay.start_polling)
-		worker.loading_hide.connect(self.overlay.hide_overlay)
+		worker.loading_waiting.connect(self.overlay.start_waiting)  # passive mode
+		worker.loading_progress.connect(self.overlay.start_polling)  # active polling mode
+		worker.loading_hide.connect(self.overlay.hide_overlay) # hide
 
-		# update settings -> set them to worker -> worker returns success/fail
-		self.worker.worker_started.connect(self.on_worker_update)
+		self.worker.worker_started.connect(self.on_worker_update) # to turn off initial loadscreen
 
 		self.request_package_list_emitter.connect(self.worker.get_packages_list)
 		self.worker.package_list_ready_emitter.connect(self.packages_page.package_list.set_packages)
@@ -78,7 +77,7 @@ class Main_Window(QWidget):
 		self.worker.entity_data_emitter.connect(self.entity_page.entity_title.set_data)
 		self.worker.animations_list_emitter.connect(self.entity_page.animations_list.set_tags)
 		self.worker.render_data_emitter.connect(self.entity_page.render.set_render_data)
-		self.worker.render_data_emitter.connect(self.switch_tab_to_entity)
+		self.worker.render_data_emitter.connect(self.switch_tab_to_entity) # when entity is selected switch to its view
 
 		self.entity_page.animations_list.tag_selected.connect(self.worker.get_gui_ready_animation)
 		self.worker.gui_animation_data_emitter.connect(self.entity_page.set_animation)
@@ -107,13 +106,6 @@ class Main_Window(QWidget):
 	def update_animation_data(self, string: str):
 		self.entity_page.stats_area.setPlainText(string)
 
-	@Slot(bool)
-	def worker_overlay_switcher(self, status: bool):
-		if status:
-			self.overlay.show_overlay("Loading...")
-		else:
-			self.overlay.hide_overlay()
-
 	def switch_tab_to_entity(self):
 		self.tabs.setCurrentIndex(1)
 
@@ -125,7 +117,8 @@ class Main_Window(QWidget):
 	def hide_initial_overlay(self):
 		self.overlay.hide_overlay()
 
-	def shutdown(self):
-		self.entity_page.render.close()
+	def closeEvent(self, event):
+		self.entity_page.render.shutdown()
 		self.service_thread.quit()
 		self.service_thread.wait()
+		event.accept()

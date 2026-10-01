@@ -2,27 +2,27 @@ from threading import Lock
 
 
 class Progress:
-	_lock: Lock
-	_current: int
-	_total: int
-	_message: str
+	lock: Lock
+	current: int
+	total: int
+	message: str
 
 	def __init__(self):
-		self._lock = Lock()
-		self._current = 0
-		self._total = 0
-		self._message = ""
+		self.lock = Lock()
+		self.current = 0
+		self.total = 0
+		self.message = ""
 
 	def update(self, current: int, total: int, message: str = ""):
-		with self._lock:
-			self._current = current
-			self._total = total
-			self._message = message
+		with self.lock:
+			self.current = current
+			self.total = total
+			self.message = message
 
 	def get(self) -> tuple[int, int, str]:
-		with self._lock:
+		with self.lock:
 			return (
-				self._current,
-				self._total,
-				self._message,
+				self.current,
+				self.total,
+				self.message,
 			)

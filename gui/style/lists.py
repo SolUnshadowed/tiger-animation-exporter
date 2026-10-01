@@ -21,14 +21,6 @@ QListWidget::item:selected {
 }
 """
 
-
-'''
-QListWidget::item:selected:!active {
-	background-color: #93c5fd;
-	color: #1e293b;
-}
-'''
-
 search_style = """
 QLineEdit {
 	background-color: #ffffff;

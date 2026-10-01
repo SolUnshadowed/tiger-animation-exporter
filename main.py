@@ -17,7 +17,11 @@ logger = logging.getLogger(__name__)
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(name)s - %(levelname)s - %(message)s'
+    format='%(name)s - %(levelname)s - %(message)s',
+	handlers=[
+        logging.FileHandler("debug.log"),
+        logging.StreamHandler()
+    ]
 )
 
 
@@ -63,8 +67,6 @@ if __name__ == "__main__":
 		logger.info("Manager threw exception")
 		logger.error(e)
 		sys.exit(1)
-
-	app.aboutToQuit.connect(window.shutdown)
 
 	window.show()
 
