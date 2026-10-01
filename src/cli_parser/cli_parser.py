@@ -4,7 +4,7 @@ from pathlib import Path
 from dataclasses import dataclass
 
 from libs.tiger_pkg.game_version import Game_Version
-from src.export.animation_export.enums import Bone_Name_Convention, Animation_Space, Export_Target
+from src.export.animation.enums import Bone_Name_Convention, Animation_Space, Export_Target
 
 
 @dataclass
