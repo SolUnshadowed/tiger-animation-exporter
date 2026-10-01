@@ -189,6 +189,8 @@ def build_animation_cache(
 		if track_group is None:
 			empty_controls.add(control_index)
 
+	logger.info(f"Controls without tracks: {list(empty_controls)}")
+
 	ignored_controls = set()
 
 	for i in range(len(ik_affected_controls)):
