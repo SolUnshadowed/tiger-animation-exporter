@@ -21,9 +21,7 @@ class Tiger_Vertex_Type:
     @property
     def byte_size(self) -> int:
         if self.bit_size % 8 != 0:
-            raise ValueError(
-                f"Vertex type size is not byte-aligned: {self.bit_size} bits"
-            )
+            raise ValueError(f"Vertex type size is not byte-aligned: {self.bit_size} bits")
 
         return self.bit_size // 8
 

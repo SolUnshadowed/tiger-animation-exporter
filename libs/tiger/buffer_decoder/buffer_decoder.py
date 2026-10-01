@@ -9,18 +9,16 @@ def sign_extend_array(values: np.ndarray, bits: int) -> np.ndarray:
 	return (values << shift) >> shift
 
 
+# unpacks components from packed uint32 values.
+# components_bits defines component order from MSB to LSB.
+#
+# components_bits = (2, 10, 10, 10)
+# uint32:
+# 31              30 29                    20 19                    10 9                     0
+# │   component 0   │      component 1       │      component 2       │      component 3       │
+# │      2 bit      │        10 bit          │        10 bit          │        10 bit          │
+
 def unpack_packed(packed: np.ndarray, components_bits: tuple[int, ...]) -> np.ndarray:
-	"""
-	unpacks components from packed uint32 values.
-	components_bits defines component order from MSB to LSB.
-
-	components_bits = (2, 10, 10, 10)
-	uint32:
-	31              30 29                    20 19                    10 9                     0
-	│   component 0   │      component 1       │      component 2       │      component 3       │
-	│      2 bit      │        10 bit          │        10 bit          │        10 bit          │
-	"""
-
 	component_count = len(components_bits)
 
 	result = np.empty(
@@ -38,10 +36,8 @@ def unpack_packed(packed: np.ndarray, components_bits: tuple[int, ...]) -> np.nd
 
 
 def normalize(values: np.ndarray, components_bits: tuple[int, ...], is_signed: bool) -> np.ndarray:
-	"""
-	UNORM: [0, 2^bits - 1] -> [0, 1]
-	SNORM: [-2^(bits-1), 2^(bits-1)-1] -> [-1, 1]
-	"""
+	# UNORM: [0, 2^bits - 1] -> [0, 1]
+	# SNORM: [-2^(bits-1), 2^(bits-1)-1] -> [-1, 1]
 
 	result = np.empty(
 		values.shape,
