@@ -359,8 +359,12 @@ def rig_retarget(
 							origin_tr = glm_get_translation(bone_object_space_matrices[0])
 
 						case Space_Type.BIND:  # 4
+							zeroth_matrix = bone_object_space_matrices[0]
+							zeroth_tr = glm_get_translation(zeroth_matrix)
+
 							bind_matrix = bone_object_space_matrices[bone_index]
-							origin_tr = glm_get_translation(bind_matrix)
+							bind_tr = glm_get_translation(bind_matrix)
+							origin_tr = zeroth_tr + bind_tr
 
 						case Space_Type.AVERAGE:
 							parent_bone_index_0 = translation_space.bone_index_0
@@ -412,8 +416,12 @@ def rig_retarget(
 							origin_rot = glm_get_quat(bone_object_space_matrices[0])
 
 						case Space_Type.BIND:  # 4
+							zeroth_matrix = bone_object_space_matrices[0]
+							zeroth_rot = glm_get_quat(zeroth_matrix)
+
 							bind_matrix = bone_object_space_matrices[bone_index]
-							origin_rot = glm_get_quat(bind_matrix)
+							bind_rot = glm_get_quat(bind_matrix)
+							origin_rot = zeroth_rot * bind_rot
 
 						case Space_Type.AVERAGE: # 5
 							parent_bone_index_0 = rotation_space.bone_index_0
@@ -490,10 +498,16 @@ def rig_retarget(
 							origin_rot = glm_get_quat(bone_object_space_matrices[0])
 
 						case Space_Type.BIND:  # 4
-							bind_matrix = bone_object_space_matrices[bone_index]
+							zeroth_matrix = bone_object_space_matrices[0]
+							zeroth_rot = glm_get_quat(zeroth_matrix)
+							zeroth_tr = glm_get_translation(zeroth_matrix)
 
-							origin_tr = glm_get_translation(bind_matrix)
-							origin_rot = glm_get_quat(bind_matrix)
+							bind_matrix = bone_object_space_matrices[bone_index]
+							bind_rot = glm_get_quat(bind_matrix)
+							bind_tr = glm_get_translation(bind_matrix)
+
+							origin_tr = zeroth_tr + zeroth_rot * bind_tr
+							origin_rot = zeroth_rot * bind_rot
 
 						case Space_Type.AVERAGE:  # 5
 							parent_bone_index_0 = constraint.rot_space_0.bone_index_0
