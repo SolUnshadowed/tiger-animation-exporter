@@ -13,7 +13,7 @@ class D1_DEVALPHA_Runtime_Rig_Main_Struct:
 	rig_components_pointer: Annotated[Vec_Pointer_32, L_Padding(68)]
 	controls_relations_pointer: Vec_Pointer_32
 	controls_transforms_pointer: Vec_Pointer_32
-	unk_pointer_0: Vec_Pointer_32
+	ik_controls_pointer: Vec_Pointer_32 # ik controls pointer
 	some_tag: Annotated[int, u32]
 	bone_to_control_pointer: Vec_Pointer_32
 	control_to_bone_pointer: Vec_Pointer_32
@@ -25,6 +25,7 @@ class D1_DEVALPHA_Runtime_Rig_Main_Struct:
 			rig_components_pointer=self.rig_components_pointer,
 			controls_relations_pointer=self.controls_relations_pointer,
 			controls_transforms_pointer=self.controls_transforms_pointer,
+			ik_controls_pointer=self.ik_controls_pointer,
 			bone_to_control_pointer=self.bone_to_control_pointer,
 			control_to_bone_pointer=self.control_to_bone_pointer,
 			control_name_to_bone_index_pointer=self.control_name_to_bone_index_pointer,

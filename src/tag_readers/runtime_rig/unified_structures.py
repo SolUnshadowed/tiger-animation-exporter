@@ -38,6 +38,7 @@ class Unified_Runtime_Rig_Main_Struct:
 	rig_components_pointer: Base_Vec_Pointer
 	controls_relations_pointer: Base_Vec_Pointer
 	controls_transforms_pointer: Base_Vec_Pointer
+	ik_controls_pointer: Base_Vec_Pointer
 	bone_to_control_pointer: Base_Vec_Pointer
 	control_to_bone_pointer: Base_Vec_Pointer
 	control_name_to_bone_index_pointer: Base_Vec_Pointer

@@ -13,7 +13,7 @@ class D1_ROI_Runtime_Rig_Main_Struct:
 	rig_components_pointer: Annotated[Vec_Pointer_64, L_Padding(128)]
 	controls_relations_pointer: Vec_Pointer_64
 	controls_transforms_pointer: Vec_Pointer_64
-	unk_pointer_0: Vec_Pointer_64
+	ik_controls_pointer: Vec_Pointer_64
 	some_tag: Annotated[int, u32]
 
 	bone_to_control_pointer: Annotated[Vec_Pointer_64, L_Padding(4)]
@@ -26,6 +26,7 @@ class D1_ROI_Runtime_Rig_Main_Struct:
 			rig_components_pointer=self.rig_components_pointer,
 			controls_relations_pointer=self.controls_relations_pointer,
 			controls_transforms_pointer=self.controls_transforms_pointer,
+			ik_controls_pointer=self.ik_controls_pointer,
 			bone_to_control_pointer=self.bone_to_control_pointer,
 			control_to_bone_pointer=self.control_to_bone_pointer,
 			control_name_to_bone_index_pointer=self.control_name_to_bone_index_pointer,
