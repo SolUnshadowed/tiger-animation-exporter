@@ -367,20 +367,23 @@ def rig_retarget(
 							origin_tr = zeroth_tr + bind_tr
 
 						case Space_Type.AVERAGE:
-							parent_bone_index_0 = translation_space.bone_index_0
-							parent_bone_index_1 = translation_space.bone_index_1
+							parent_0_index = translation_space.bone_index_0
+							parent_1_index = translation_space.bone_index_1
 
-							if not is_bone_updated[parent_bone_index_0]:
-								logger.warning(f"point_and_orient // tr constraint 'average': bone 0 {parent_bone_index_0} is not updated yet!")
+							if not is_bone_updated[parent_0_index] and parent_0_index > -1:
+								logger.warning(f"point_and_orient // tr constraint 'average': bone 0 {parent_0_index} is not updated yet!")
 								continue
 
-							if not is_bone_updated[parent_bone_index_1]:
-								logger.warning(f"point_and_orient // tr constraint 'average': bone 1 {parent_bone_index_1} is not updated yet!")
+							if not is_bone_updated[parent_1_index] and parent_1_index > -1:
+								logger.warning(f"point_and_orient // tr constraint 'average': bone 1 {parent_1_index} is not updated yet!")
 								continue
+
+							parent_0_matrix = skeleton_bones_matrices[parent_0_index] if parent_0_index > -1 else identity_matrix
+							parent_1_matrix = skeleton_bones_matrices[parent_1_index] if parent_1_index > -1 else identity_matrix
 
 							origin_tr = 0.5 * (
-								glm_get_translation(skeleton_bones_matrices[parent_bone_index_0]) +
-								glm_get_translation(skeleton_bones_matrices[parent_bone_index_1])
+								glm_get_translation(parent_0_matrix) +
+								glm_get_translation(parent_1_matrix)
 							)
 						case _:
 							logger.warning("unsupported tr source for point and orient", translation_space.space_type)
@@ -424,21 +427,24 @@ def rig_retarget(
 							origin_rot = zeroth_rot * bind_rot
 
 						case Space_Type.AVERAGE: # 5
-							parent_bone_index_0 = rotation_space.bone_index_0
-							parent_bone_index_1 = rotation_space.bone_index_1
+							parent_0_index = rotation_space.bone_index_0
+							parent_1_index = rotation_space.bone_index_1
 
-							if not is_bone_updated[parent_bone_index_0]:
-								logger.warning(f"point_and_orient // rot constraint 'average': bone 0 {parent_bone_index_0} is not updated yet!")
+							if not is_bone_updated[parent_0_index] and parent_0_index > -1:
+								logger.warning(f"point_and_orient // rot constraint 'average': bone 0 {parent_0_index} is not updated yet!")
 								continue
 
-							if not is_bone_updated[parent_bone_index_1]:
-								logger.warning(f"point_and_orient // rot constraint 'average': bone 1 {parent_bone_index_1} is not updated yet!")
+							if not is_bone_updated[parent_1_index] and parent_1_index > -1:
+								logger.warning(f"point_and_orient // rot constraint 'average': bone 1 {parent_1_index} is not updated yet!")
 								continue
 
-							parent_bone_0_rot = glm_get_quat(skeleton_bones_matrices[parent_bone_index_0])
-							parent_bone_1_rot = glm_get_quat(skeleton_bones_matrices[parent_bone_index_1])
+							parent_0_matrix = skeleton_bones_matrices[parent_0_index] if parent_0_index > -1 else identity_matrix
+							parent_1_matrix = skeleton_bones_matrices[parent_1_index] if parent_1_index > -1 else identity_matrix
 
-							origin_rot = glm.slerp(parent_bone_0_rot, parent_bone_1_rot, 0.5)
+							parent_0_rot = glm_get_quat(parent_0_matrix)
+							parent_1_rot = glm_get_quat(parent_1_matrix)
+
+							origin_rot = glm.slerp(parent_0_rot, parent_1_rot, 0.5)
 
 						case Space_Type.AIM:  # 6
 							aim_influence = constraint.aim_influence
@@ -510,31 +516,31 @@ def rig_retarget(
 							origin_rot = zeroth_rot * bind_rot
 
 						case Space_Type.AVERAGE:  # 5
-							parent_bone_index_0 = constraint.rot_space_0.bone_index_0
-							parent_bone_index_1 = constraint.rot_space_0.bone_index_1
+							parent_0_index = constraint.rot_space_0.bone_index_0
+							parent_1_index = constraint.rot_space_0.bone_index_1
 
-							if not is_bone_updated[parent_bone_index_0]:
-								logger.warning(f"parent // rot constraint 'average': bone 0 {parent_bone_index_0} is not updated yet!")
+							if not is_bone_updated[parent_0_index] and parent_0_index > -1:
+								logger.warning(f"parent // rot constraint 'average': bone 0 {parent_0_index} is not updated yet!")
 								continue
 
-							if not is_bone_updated[parent_bone_index_1]:
-								logger.warning(f"parent // rot constraint 'average': bone 1 {parent_bone_index_1} is not updated yet!")
+							if not is_bone_updated[parent_1_index] and parent_1_index > -1:
+								logger.warning(f"parent // rot constraint 'average': bone 1 {parent_1_index} is not updated yet!")
 								continue
 
-							parent_bone_0_matrix = skeleton_bones_matrices[parent_bone_index_0]
-							parent_bone_0_tr = glm_get_translation(parent_bone_0_matrix)
-							parent_bone_0_rot = glm_get_quat(parent_bone_0_matrix)
+							parent_0_matrix = skeleton_bones_matrices[parent_0_index] if parent_0_index > -1 else identity_matrix
+							parent_0_tr = glm_get_translation(parent_0_matrix)
+							parent_0_rot = glm_get_quat(parent_0_matrix)
 
-							parent_bone_1_matrix = skeleton_bones_matrices[parent_bone_index_1]
-							parent_bone_1_tr = glm_get_translation(parent_bone_1_matrix)
-							parent_bone_1_rot = glm_get_quat(parent_bone_1_matrix)
+							parent_1_matrix = skeleton_bones_matrices[parent_1_index] if parent_1_index > -1 else identity_matrix
+							parent_1_tr = glm_get_translation(parent_1_matrix)
+							parent_1_rot = glm_get_quat(parent_1_matrix)
 
 							origin_tr = 0.5 * (
-								parent_bone_0_tr +
-								parent_bone_1_tr
+								parent_0_tr +
+								parent_1_tr
 							)
 
-							origin_rot = glm.slerp(parent_bone_0_rot, parent_bone_1_rot, 0.5)
+							origin_rot = glm.slerp(parent_0_rot, parent_1_rot, 0.5)
 
 						case Space_Type.AIM:
 							aim_influence = constraint.aim_influence
@@ -574,17 +580,20 @@ def rig_retarget(
 									parent_0_index = translation_space.bone_index_0
 									parent_1_index = translation_space.bone_index_1
 
-									if not is_bone_updated[parent_0_index]:
+									if not is_bone_updated[parent_0_index] and parent_0_index > -1:
 										logger.warning(f"parent // tr constraint 'average': bone {parent_0_index} is not updated yet!")
 										continue
 
-									if not is_bone_updated[parent_1_index]:
+									if not is_bone_updated[parent_1_index]  and parent_1_index > -1:
 										logger.warning(f"parent // tr constraint 'average': bone {parent_1_index} is not updated yet!")
 										continue
 
-									pos1 = glm_get_translation(skeleton_bones_matrices[parent_0_index])
-									pos2 = glm_get_translation(skeleton_bones_matrices[parent_1_index])
-									origin_tr = 0.5 * (pos1 + pos2)
+									parent_0_matrix = skeleton_bones_matrices[parent_0_index] if parent_0_index > -1 else identity_matrix
+									parent_1_matrix = skeleton_bones_matrices[parent_1_index] if parent_1_index > -1 else identity_matrix
+
+									parent_0_tr = glm_get_translation(parent_0_matrix)
+									parent_1_tr = glm_get_translation(parent_1_matrix)
+									origin_tr = 0.5 * (parent_0_tr + parent_1_tr)
 
 					result_tr = origin_tr + origin_rot * animation_tr
 					result_rot = origin_rot * animation_rot
