@@ -334,7 +334,7 @@ def rig_retarget(
 							parent_bone_index = translation_space.bone_index_0
 
 							if parent_bone_index == -1:
-								parent_matrix = IDENTITY_MAT4
+								parent_matrix = skeleton_bones_matrices[0]
 							elif bone_updated[parent_bone_index]:
 								parent_matrix = skeleton_bones_matrices[parent_bone_index]
 							else:
@@ -407,7 +407,7 @@ def rig_retarget(
 							parent_bone_index = rotation_space.bone_index_0
 
 							if parent_bone_index == -1:
-								parent_matrix = IDENTITY_MAT4
+								parent_matrix = skeleton_bones_matrices[0]
 							elif bone_updated[parent_bone_index]:
 								parent_matrix = skeleton_bones_matrices[parent_bone_index]
 							else:
@@ -498,7 +498,7 @@ def rig_retarget(
 							parent_bone_index = constraint.rot_space_0.bone_index_0
 
 							if parent_bone_index == -1:
-								parent_matrix = IDENTITY_MAT4
+								parent_matrix = skeleton_bones_matrices[0]
 							elif bone_updated[parent_bone_index]:
 								parent_matrix = skeleton_bones_matrices[parent_bone_index]
 							else:
@@ -586,7 +586,7 @@ def rig_retarget(
 									parent_bone_index = translation_space.bone_index_0
 
 									if parent_bone_index == -1:
-										parent_matrix = IDENTITY_MAT4
+										parent_matrix = skeleton_bones_matrices[0]
 									elif bone_updated[parent_bone_index]:
 										parent_matrix = skeleton_bones_matrices[parent_bone_index]
 									else:
