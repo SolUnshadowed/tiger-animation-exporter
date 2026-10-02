@@ -87,3 +87,22 @@ def glm_decompose_mat4(mat: glm.mat4):
 	translation = glm_get_translation(mat)
 
 	return scale, rotation, translation
+
+def glm_interpolate_mat4(x: glm.mat4, y: glm.mat4, a: float):
+	return glm_compose_mat4(
+		glm.mix(
+			glm_get_translation(x),
+			glm_get_translation(y),
+			a
+		),
+		glm.slerp(
+			glm_get_quat(x),
+			glm_get_quat(y),
+			a
+		),
+		glm.mix(
+			glm_get_scale(x),
+			glm_get_scale(y),
+			a
+		)
+	)
