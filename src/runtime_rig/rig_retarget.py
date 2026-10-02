@@ -101,6 +101,8 @@ def calc_control_limit(rig: Runtime_Rig_Data, animation_rig_components: Tag_Arra
 				limit += min(rig_component_count, animation_component_count)
 				logger.info(f"\tuse subset [{i}] part, {u32_to_be_hex(rig_component_hash)}, control count: {min(rig_component_count, animation_component_count)}")
 				break
+		else:
+			break
 
 	return limit
 
