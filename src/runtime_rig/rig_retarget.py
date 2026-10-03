@@ -9,7 +9,8 @@ from libs.tag.tag_array import Tag_Array
 from libs.tag.data_types import Skeleton_Node_Def, Runtime_Rig_Component
 from libs.matrix_operations import (
 	glm_get_scale, glm_get_quat, glm_get_translation,
-	glm_decompose_mat4, glm_compose_mat4, glm_interpolate_mat4
+	glm_decompose_mat4, glm_compose_mat4, glm_interpolate_mat4,
+	glm_axis_x, glm_axis_y, glm_axis_z, X, Z
 )
 from src.tag_readers.animation.read_animation import Animation_Data
 from src.tag_readers.skeleton.read_skeleton import Skeleton
@@ -20,7 +21,7 @@ from src.tag_readers.runtime_rig.unified_structures import (
 	Unified_Constraint, Constraint_Type,
 	IK_Function_Type, Space_Type, Space_Def
 )
-
+from .helpers import solve_no_pole
 
 logger = logging.getLogger(__name__)
 IDENTITY_MAT4 = glm.mat4()
@@ -320,10 +321,10 @@ def rig_retarget(
 				animation_sc = glm.vec3(get_frame_value(track_group.scales, frame))
 
 				rotation = get_frame_value(track_group.rotations, frame)
-				animation_rot = glm.normalize(glm.quat(rotation[3], rotation[1], rotation[2], rotation[0]))
+				animation_rot = glm.normalize(glm.quat(rotation[3], rotation[0], rotation[1], rotation[2]))
 
 				translation = get_frame_value(track_group.translations, frame)
-				animation_tr = glm.vec3(translation[1], translation[2], translation[0])
+				animation_tr = glm.vec3(translation[0], translation[1], translation[2])
 
 				if constraint.constraint_type == Constraint_Type.POINT_AND_ORIENT:
 					rotation_space: Space_Def = constraint.rot_space_0
@@ -702,133 +703,28 @@ def rig_retarget(
 				chain = rig_cache.ik_3_chains[bone_index]
 
 				start_bone_index = chain.start_bone_index
-				target_bone_index = chain.target_bone_index
+				middle_bone_index = chain.target_bone_index
 				end_bone_index = chain.end_bone_index
 
-				# select bones (not controls as ik bones have no controls, in d1 at least)
+				start_matrix = skeleton_bones_matrices[start_bone_index]
+				middle_matrix = start_matrix * rest_matrices_parent_space[middle_bone_index]
+				end_matrix = middle_matrix * rest_matrices_parent_space[end_bone_index]
 
-				# start is already moved in right position
-				start_matrix = skeleton_bones_matrices[start_bone_index]  # shoulder / thigh
-				start_sc, start_rot, start_tr = glm_decompose_mat4(start_matrix)
+				target_matrix = skeleton_bones_matrices[end_bone_index]
 
-				target_offset_matrix = rest_matrices_parent_space[target_bone_index]
-				target_matrix = start_matrix * target_offset_matrix  # elbow / knee <- the one being soved
-				# extract target animation_scale, rotation, translation
-				# animation_scale and translation are already good, need to change rotation, currently it is "default"
-				target_sc, target_rot, target_tr = glm_decompose_mat4(target_matrix)
+				arr = solve_no_pole(target_matrix, start_matrix, middle_matrix, end_matrix)
 
-				# end is already moved in right position
-				end_matrix = skeleton_bones_matrices[end_bone_index]  # wrist / foot
-				end_real_tr = glm_get_translation(end_matrix)  # end
-				# where end would be with current target_rot end'
-				end_offset_matrix = rest_matrices_parent_space[end_bone_index]
-				end_constrained_matrix = target_matrix * end_offset_matrix
-				end_constrained_tr = glm_get_translation(end_constrained_matrix)
+				if arr is None:
+					continue
 
-				# add rotation to start
-				v1 = target_tr - start_tr   # shoulder -> elbow / thigh -> knee
-				v2 = end_constrained_tr - start_tr
-				v3 = end_real_tr - start_tr
+				start_new_matrix, middle_new_matrix, end_new_matrix = arr
 
-				# |v1 x v3| = sinA * |v1| * |v3|
-				# |v1|, |v3| == 1
-				# |v1 x v3| = sinA
-				v1_unit = glm.normalize(v1)
-				cross_check = glm.length(glm.cross(v1_unit, glm.normalize(v3)))
+				if start_bone_index > 0:
+					skeleton_bones_matrices[start_bone_index] = start_new_matrix
 
-				plane_current = glm.normalize(glm.cross(v1, v2))  # plane with end not in right position
-				plane_target = None
-
-				# angle is checked in case if chain is fully extended
-				# if it is fully extended there is no plane to match, so this block will not be executed
-				if cross_check > 0.0872:
-					plane_target = glm.normalize(glm.cross(v1, v3))
-				else:
-					plane_target = plane_current
-
-				# plane target is unit
-				current_cross_target = glm.cross(plane_current, plane_target)
-
-				cos_angle = glm.clamp(glm.dot(plane_current, plane_target), -1.0, 1.0)
-				sin_angle = glm.dot(v1_unit, current_cross_target)  # triple product
-
-				angle = glm.atan2(sin_angle, cos_angle)
-
-				# guard when planes almost match
-				if glm.length(current_cross_target) < 1e-6:
-					angle = 0.0
-
-				# add rotation so planes will match
-				start_add_rot = glm.angleAxis(angle, v1_unit)
-				start_new_rot = start_add_rot * start_rot
-
-				# update start
-				start_matrix = glm_compose_mat4(start_tr, start_new_rot, start_sc)
-				# update dependent matrices
-				target_matrix = start_matrix * target_offset_matrix
-				target_sc, target_rot, target_tr = glm_decompose_mat4(target_matrix)
-
-				end_constrained_matrix = target_matrix * end_offset_matrix
-				end_constrained_tr = glm_get_translation(end_constrained_matrix)
-
-				#  Law of Cosines
-				upper_arm_len = glm.length(v1)
-				forearm_len = glm.length(end_constrained_tr - target_tr)
-				dist_to_target = glm.length(end_real_tr - start_tr)
-
-				target_dist_clamped = glm.clamp(dist_to_target, abs(upper_arm_len - forearm_len), upper_arm_len + forearm_len)
-
-				cos_shoulder_inner = glm.clamp(
-					(upper_arm_len * upper_arm_len + target_dist_clamped * target_dist_clamped - forearm_len * forearm_len) /
-					(2 * upper_arm_len * target_dist_clamped),
-					-1,
-					1
-				)
-
-				desired_shoulder_inner_angle: float = glm.acos(cos_shoulder_inner)
-
-				cos_elbow_inner = glm.clamp(
-					(upper_arm_len * upper_arm_len + forearm_len * forearm_len - target_dist_clamped * target_dist_clamped) /
-					(2 * upper_arm_len * forearm_len),
-					-1,
-					1
-				)
-				desired_elbow_inner_angle = glm.acos(cos_elbow_inner)
-
-				current_shoulder_to_elbow_vec = target_tr - start_tr
-
-				# shoulder angle in plane
-				current_shoulder_cross = glm.cross(current_shoulder_to_elbow_vec, v3)
-				current_shoulder_angle = glm.atan2(glm.dot(current_shoulder_cross, plane_target), glm.dot(current_shoulder_to_elbow_vec, v3))
-
-				target_shoulder_angle_signed = sign(current_shoulder_angle) * desired_shoulder_inner_angle
-				shoulder_adjust_rot = glm.angleAxis((current_shoulder_angle - target_shoulder_angle_signed), plane_target)
-				start_new_rot = shoulder_adjust_rot * start_new_rot  # reusing variable
-
-				start_matrix = glm_compose_mat4(start_tr, start_new_rot, start_sc)
-				skeleton_bones_matrices[start_bone_index] = start_matrix
-				bone_updated[start_bone_index] = True
-
-				# update target and end_constrained after moving start
-				target_matrix = start_matrix * target_offset_matrix
-				target_sc, target_rot, target_tr = glm_decompose_mat4(target_matrix)
-
-				end_constrained_matrix = target_matrix * end_offset_matrix
-				end_constrained_tr = glm_get_translation(end_constrained_matrix)
-
-				# target angle in plane
-				elbow_to_shoulder_vec = start_tr - target_tr
-				elbow_to_hand_vec = end_constrained_tr - target_tr
-
-				current_elbow_cross = glm.cross(elbow_to_shoulder_vec, elbow_to_hand_vec)
-				current_elbow_angle = glm.atan2(glm.dot(current_elbow_cross, plane_target), glm.dot(elbow_to_shoulder_vec, elbow_to_hand_vec))
-
-				target_elbow_angle_signed = sign(current_elbow_angle) * desired_elbow_inner_angle
-				elbow_adjust_rot = glm.angleAxis((target_elbow_angle_signed - current_elbow_angle), plane_target)
-
-				target_matrix = glm_compose_mat4(target_tr, elbow_adjust_rot * target_rot, target_sc)
-				skeleton_bones_matrices[target_bone_index] = target_matrix
-				bone_updated[target_bone_index] = True
+				skeleton_bones_matrices[middle_bone_index] = middle_new_matrix
+				bone_updated[middle_bone_index] = True
+				skeleton_bones_matrices[end_bone_index] = end_new_matrix
 
 		# store frame into converted animation
 		for bone_index, updated in enumerate(bone_updated):
