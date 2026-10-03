@@ -21,7 +21,7 @@ from src.tag_readers.runtime_rig.unified_structures import (
 	Unified_Constraint, Constraint_Type,
 	IK_Function_Type, Space_Type, Space_Def
 )
-from .helpers import solve_no_pole
+from .helpers import ik_3_solve_no_pole
 
 logger = logging.getLogger(__name__)
 IDENTITY_MAT4 = glm.mat4()
@@ -712,7 +712,7 @@ def rig_retarget(
 
 				target_matrix = skeleton_bones_matrices[end_bone_index]
 
-				arr = solve_no_pole(target_matrix, start_matrix, middle_matrix, end_matrix)
+				arr = ik_3_solve_no_pole(target_matrix, start_matrix, middle_matrix, end_matrix)
 
 				if arr is None:
 					continue

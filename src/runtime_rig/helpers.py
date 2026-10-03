@@ -54,7 +54,7 @@ def bone_aim_offset(bone_rot: glm.quat, segment: glm.vec3) -> glm.quat:
     return glm.inverse(bone_rot) * look_rot_x_dir_z_ref(segment, glm_axis_z(bone_rot))
 
 
-def solve_no_pole(
+def ik_3_solve_no_pole(
     target: glm.mat4, start: glm.mat4, middle: glm.mat4, end: glm.mat4
 ) -> 'tuple[glm.mat4, glm.mat4, glm.mat4] | None':
     start_tr = glm_get_translation(start)
@@ -80,14 +80,14 @@ def solve_no_pole(
     start_to_target_vec = glm_get_translation(target) - start_tr # result chain
     max_chain_len = 0.98 * (start_to_middle_len + middle_to_end_len)  # max allowed length for start_to_target, 98% to prevent fully straight start_to_target
     min_chain_len = min(max_chain_len, 1.02 * abs(start_to_middle_len - middle_to_end_len))  # l
-    chain_len_clamped = glm.clamp(glm.length(start_to_target_vec), min_chain_len, max_chain_len)
+    start_to_target_vec_clamped = glm.clamp(glm.length(start_to_target_vec), min_chain_len, max_chain_len)
     start_to_target_aim = glm.normalize(start_to_target_vec)  # direction from start to target
-    end_new_tr = start_tr + start_to_target_aim * chain_len_clamped  # wrist position, using clamped length and direction aim
+    end_new_tr = start_tr + start_to_target_aim * start_to_target_vec_clamped  # wrist position, using clamped length and direction aim
 
     # cosine law, angle between start_to_middle and start_to_target
     cos_a = (
-        (start_to_middle_len * start_to_middle_len + chain_len_clamped * chain_len_clamped - middle_to_end_len * middle_to_end_len) /
-        (2 * start_to_middle_len * chain_len_clamped)
+        (start_to_middle_len * start_to_middle_len + start_to_target_vec_clamped * start_to_target_vec_clamped - middle_to_end_len * middle_to_end_len) /
+        (2 * start_to_middle_len * start_to_target_vec_clamped)
     )
     sin_a = glm.sqrt(max(1 - cos_a * cos_a, 1e-8))
     bend_plane_rot = look_rot_x_dir_y_ref(start_to_target_aim, glm.normalize(start_to_middle_vec))
@@ -112,6 +112,63 @@ def solve_no_pole(
         end_new_tr, # updated translation
         glm_get_quat(target), # keep rotation
         glm.vec3(1)
+    )
+
+    return (s, m, e)
+
+
+def ik_3_solve_with_pole(
+    target: glm.mat4, pole: glm.vec3, start: glm.mat4, middle: glm.mat4, end: glm.mat4
+) -> 'tuple[glm.mat4, glm.mat4, glm.mat4] | None':
+    start_to_middle_vec = glm_get_translation(middle) - glm_get_translation(start)
+    start_to_middle_len = glm.length(start_to_middle_vec)
+    middle_to_end_vec = glm_get_translation(end) - glm_get_translation(middle)
+    middle_to_end_len = glm.length(middle_to_end_vec)
+
+    if start_to_middle_len <= 1e-4 or middle_to_end_len <= 1e-4:
+        return
+
+    start_to_target_vec = glm_get_translation(target) - glm_get_translation(start)
+    start_to_target_vec_clamped = glm.clamp(
+        glm.length(start_to_target_vec),
+        abs(start_to_middle_len - middle_to_end_len),
+        start_to_middle_len + middle_to_end_len
+    )
+    # creating x, y basis to solve in bend plane
+    x = glm.normalize(start_to_target_vec) if glm.length(start_to_target_vec) >= 1e-4 else glm_axis_x(glm_get_quat(start))
+    y = glm.normalize(glm.cross(pole, x))
+
+    # cosine law, angle between start_to_middle and start_to_target
+    cos_a = (
+        (start_to_middle_len * start_to_middle_len + start_to_target_vec_clamped * start_to_target_vec_clamped - middle_to_end_len * middle_to_end_len) /
+        (2 * start_to_middle_len * start_to_target_vec_clamped)
+    )
+    sin_a = -glm.sqrt(max(1 - cos_a * cos_a, 0))  # always the negative side
+    middle_new_tr = glm_get_translation(start) + x * (start_to_middle_len * cos_a) + y * (start_to_middle_len * sin_a)
+    end_new_tr = glm_get_translation(start) + x * start_to_target_vec_clamped # from start for start_to_target_vec_clamped in direction x
+
+    s = glm_compose_mat4(
+        glm_get_translation(start),
+        from_to( # from to is delta between old and new middle_tr
+            glm.normalize(start_to_middle_vec),
+            glm.normalize(middle_new_tr - glm_get_translation(start)),
+            pole
+        ) * glm_get_quat(start), # add delta
+        glm.vec3(1.0)
+    )
+    m = glm_compose_mat4(
+        middle_new_tr,
+        from_to(
+            glm.normalize(middle_to_end_vec),
+            glm.normalize(end_new_tr - middle_new_tr),
+            pole
+        ) * glm_get_quat(middle),
+        glm.vec3(1.0)
+    )
+    e = glm_compose_mat4(
+        end_new_tr,
+        glm_get_quat(target),
+        glm.vec3(1.0)
     )
 
     return (s, m, e)
