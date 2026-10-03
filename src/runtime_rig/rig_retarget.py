@@ -706,12 +706,13 @@ def rig_retarget(
 				middle_bone_index = chain.target_bone_index
 				end_bone_index = chain.end_bone_index
 
-				start_matrix = skeleton_bones_matrices[start_bone_index]
+				start_matrix = glm.mat4(skeleton_bones_matrices[start_bone_index]) # to copy matrix
 				middle_matrix = start_matrix * rest_matrices_parent_space[middle_bone_index]
 				end_matrix = middle_matrix * rest_matrices_parent_space[end_bone_index]
 
 				target_matrix = skeleton_bones_matrices[end_bone_index]
 
+				# TODO: add propagate and ik_3_solve_with_pole
 				arr = ik_3_solve_no_pole(target_matrix, start_matrix, middle_matrix, end_matrix)
 
 				if arr is None:
