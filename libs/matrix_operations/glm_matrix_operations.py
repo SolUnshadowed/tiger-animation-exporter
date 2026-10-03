@@ -1,7 +1,24 @@
-from pyglm import glm
+from pyglm import glm, glm_typing
 
 
-def glm_get_scale(mat: glm.mat4):
+X = glm.vec3(1, 0, 0)
+Y = glm.vec3(0, 1, 0)
+Z = glm.vec3(0, 0, 1)
+
+
+def glm_axis_x(q: glm.quat) -> glm.vec3:
+	return glm.vec3(q * X)
+
+
+def glm_axis_y(q: glm.quat) -> glm.vec3:
+	return glm.vec3(q * Y)
+
+
+def glm_axis_z(q: glm.quat) -> glm.vec3:
+	return glm.vec3(q * Z)
+
+
+def glm_get_scale(mat: glm_typing.F32Mat4x4) -> glm.vec3:
 	return glm.vec3(
 		glm.length(glm.vec3(mat[0])),
 		glm.length(glm.vec3(mat[1])),
