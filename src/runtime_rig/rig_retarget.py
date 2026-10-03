@@ -648,8 +648,12 @@ def rig_retarget(
 
 			# functions this control has
 
+		for bone_index in rig_cache.ik_3_chains:
+			control_index = bone_to_control[bone_index]
 			# RFK chain
 			MAX_INBETWEEN = 16
+
+			constraint = constraints[control_index]
 
 			if constraint.ik_function_type == IK_Function_Type.RFK:
 				if bone_index not in rig_cache.rfk_chains:
@@ -680,7 +684,6 @@ def rig_retarget(
 					# end's current offset from start
 					relative = glm.inverse(pose_start) * skeleton_bones_matrices[end_bone_index]
 
-
 					for k, bone in enumerate(inbetween, start=1):
 						t = k / (n + 1)
 
@@ -692,7 +695,10 @@ def rig_retarget(
 						skeleton_bones_matrices[bone] = pose_start * glm_interpolate_mat4(rest_relative, distributed, t)
 						bone_updated[bone] = True
 
+		for bone_index in rig_cache.ik_3_chains:
+			control_index = bone_to_control[bone_index]
 
+			constraint = constraints[control_index]
 			# IK_3 chain
 			if constraint.ik_function_type == IK_Function_Type.IK_3:
 				if bone_index not in rig_cache.ik_3_chains:
