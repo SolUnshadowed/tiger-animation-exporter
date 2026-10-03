@@ -1,9 +1,9 @@
 from __future__ import annotations
-from pyglm import glm, glm_typing
+from pyglm import glm
 from libs.matrix_operations import (
-	glm_get_scale, glm_get_quat, glm_get_translation,
-	glm_decompose_mat4, glm_compose_mat4,
-	glm_axis_x, glm_axis_y, glm_axis_z, X, Z
+	glm_get_quat, glm_get_translation,
+	glm_compose_mat4,
+	glm_axis_x, glm_axis_y, glm_axis_z, X
 )
 
 
@@ -25,7 +25,7 @@ def look_rot_x_dir_z_ref(dir_x: glm.vec3, ref_z: glm.vec3) -> glm.quat:
     # or z is a closest vector to ref_z, orthogonal to x
     z = glm.normalize(glm.cross(glm.cross(x, ref_z), x))
 
-    q1 = from_to(X, x, z) # shortest rotation from (1, 0, 0) to x, (z as fallback pole)
+    q1 = from_to(X, x, z) # shortest rotation from (1, 0, 0) to x, (z as pole)
     # q1 * Z is where the Z axis ended up after q1.
     # Both q1 * Z and z are perpendicular to x, so this is a pure twist around x
     # x stays in place, only the roll changes. (x is the pole for the 180 degree case)
@@ -72,39 +72,46 @@ def solve_no_pole(
         return
 
     # rotation diff from bone quat and bone aimed along segment
-    start_rot_delta = bone_aim_offset(start_rot, start_to_middle_vec)
+    start_rot_delta = bone_aim_offset(start_rot, start_to_middle_vec) # delta between bone and perfect bone (bone which x axis is aligned with segment)
     middle_rot_delta  = bone_aim_offset(middle_rot, middle_to_end_vec)
-    start_z = glm_axis_z(start_rot * start_rot_delta)
+    start_z = glm_axis_z(start_rot * start_rot_delta) # z axis of perfect bone
     middle_z  = glm_axis_z(middle_rot * middle_rot_delta)
 
-    chain_len = glm_get_translation(target) - start_tr # chain result length
-    max_chain_len = 0.98 * (start_to_middle_len + middle_to_end_len)  # max allowed length for chain, 98% to prevent fully straight chain
+    start_to_target_vec = glm_get_translation(target) - start_tr # result chain
+    max_chain_len = 0.98 * (start_to_middle_len + middle_to_end_len)  # max allowed length for start_to_target, 98% to prevent fully straight start_to_target
     min_chain_len = min(max_chain_len, 1.02 * abs(start_to_middle_len - middle_to_end_len))  # l
-    chain_len_clamped = glm.clamp(glm.length(chain_len), min_chain_len, max_chain_len)
-    start_to_target_aim = glm.normalize(chain_len)  # direction from start to target
+    chain_len_clamped = glm.clamp(glm.length(start_to_target_vec), min_chain_len, max_chain_len)
+    start_to_target_aim = glm.normalize(start_to_target_vec)  # direction from start to target
     end_new_tr = start_tr + start_to_target_aim * chain_len_clamped  # wrist position, using clamped length and direction aim
 
-    # cosine law
+    # cosine law, angle between start_to_middle and start_to_target
     cos_a = (
         (start_to_middle_len * start_to_middle_len + chain_len_clamped * chain_len_clamped - middle_to_end_len * middle_to_end_len) /
         (2 * start_to_middle_len * chain_len_clamped)
     )
     sin_a = glm.sqrt(max(1 - cos_a * cos_a, 1e-8))
-    frame = look_rot_x_dir_y_ref(start_to_target_aim, glm.normalize(start_to_middle_vec))
-    middle_new_tr = start_tr + frame * glm.vec3(start_to_middle_len * cos_a, start_to_middle_len * sin_a, 0)
-
-    new_dir = glm.normalize(end_new_tr - middle_new_tr)
-    print(abs(glm.dot(new_dir, middle_z)), glm.degrees(glm.angle(middle_rot_delta)))
+    bend_plane_rot = look_rot_x_dir_y_ref(start_to_target_aim, glm.normalize(start_to_middle_vec))
+    # look_rot_x_dir_y_ref is not mandatory, can be look_rot_x_dir_z_ref
+    # just making a basis with x and y, hence in next line z is zero, because plane is flat, obviously
+    middle_new_tr = start_tr + bend_plane_rot * glm.vec3(start_to_middle_len * cos_a, start_to_middle_len * sin_a, 0)
 
     s = glm_compose_mat4(
-        start_tr,
+        start_tr, # keep translation
+        # middle_new_tr - start_tr = shoulder -> elbow
+        # look_rot_x_dir_z_ref(middle_new_tr - start_tr, start_z) - orientation of a perfect bone
+        # * glm.inverse(start_rot_delta) is to make from perfect bone a real one
         look_rot_x_dir_z_ref(middle_new_tr - start_tr, start_z) * glm.inverse(start_rot_delta),
         glm.vec3(1)
     )
     m = glm_compose_mat4(
-        middle_new_tr,
+        middle_new_tr, # updated translation
         look_rot_x_dir_z_ref(end_new_tr - middle_new_tr, middle_z) * glm.inverse(middle_rot_delta),
-        glm.vec3(1))
-    e = glm_compose_mat4(end_new_tr, glm_get_quat(target), glm.vec3(1))
+        glm.vec3(1)
+    )
+    e = glm_compose_mat4(
+        end_new_tr, # updated translation
+        glm_get_quat(target), # keep rotation
+        glm.vec3(1)
+    )
 
     return (s, m, e)
