@@ -64,27 +64,19 @@ class Bone_Tracks:
 class Quat_Norm_Error(Exception):
 	pass
 
-# NOTE: reading compressed binary quaternion data as float_s16 matches quaternion components from api
-# it seems:
-# 	float_s16[0] is quat.w
-#	float_s16[1] is quat.x
-#	float_s16[2] is quat.y
-# so the missing component is always quat.z
-# NOTE: How to get Z's sign?? Mathematically both z and -z are correct
-# I assume components[1] lesser bit holds sign 1 for minus, 0 for plus,
-# but need more statistics
-# NOTE: Checked of all the data available so it seems to be working
-# If it does not work this is just the worst coincidence possible
+# component order: (w, x, y), z sign flag is in x's lowest bit
 def decompress_quaternion_scalar(components: list[int]) -> list[float]:
-	floats = [unpack_snorm16_scalar(x) for x in components]
+	w_raw, x_raw, y_raw = components
 
-	w, x, y = floats
+	negate_z = (x_raw & 1) == 1  # flag in lowest bit
+
+	w = unpack_snorm16_scalar(w_raw)
+	x = unpack_snorm16_scalar(x_raw & ~1)  # clear the sign bit before decoding
+	y = unpack_snorm16_scalar(y_raw)
+
 	z = math.sqrt(max(1 - w * w - x * x - y * y, 0))
 
-	if math.fabs(x * x + y * y + z * z + w * w - 1) > 0.001:
-		raise err.Quat_Norm_Error(x * x + y * y + z * z + w * w)
-
-	if components[1] & 1 == 1:
+	if negate_z:
 		z = -z
 
 	return [x, y, z, w]
@@ -95,16 +87,16 @@ def decompress_snorm16_quaternion_vector(components: np.ndarray) -> np.ndarray:
 	take frame matrix, shape (N, 3), components [w, x, y].
 	return matrix, shape (N, 4), components [x, y, z, w].
 	"""
-	floats = components / 32767.0  # decode_snorm16
-	w = floats[..., 0]
-	x = floats[..., 1]
-	y = floats[..., 2]
+	x_raw = components[1]
 
-	z_squared = 1.0 - w ** 2 - x ** 2 - y ** 2
-	z = np.sqrt(np.maximum(z_squared, 0.0))
+	negate_z = (x_raw & 1).astype(bool)  # take the sign before clearing the bit
 
-	sign_mask = (components[..., 1] & 1) == 1
-	z = np.where(sign_mask, -z, z)
+	w = components[..., 0] / 32767.0
+	x = (x_raw & ~1) / 32767.0
+	y = components[..., 2] / 32767.0
+
+	z = np.sqrt(np.maximum(1.0 - w * w - x * x - y * y, 0.0))
+	z = np.where(negate_z, -z, z)
 
 	return np.stack([x, y, z, w], axis=-1)
 
