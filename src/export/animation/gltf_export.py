@@ -10,11 +10,11 @@ from pathlib import Path
 
 from .enums import Bone_Name_Convention, Animation_Space
 from libs.matrix_operations import np_decompose_matrix
-from src.tag_readers.skeleton.read_skeleton import transform_to_np_matrix, Skeleton
+from src.tag_readers.skeleton.read_skeleton import transform_to_np_matrix, Skeleton, Transform
 from src.fnv_hashes.int_to_hex import u32_to_le_hex, u32_to_be_hex
 from src.fnv_hashes.bones_names import convert_hash_to_blender_name, convert_hash_to_bungie_name
 from src.decode_animation.decode_animation import Bone_Tracks
-
+from src.export.animation.convert_coord_system import transform_to_gl
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +146,7 @@ def create_armature_object_space(
 
 	# Create real bones' nodes
 	for i, node in enumerate(nodes_data):
-		srt = transform_to_np_matrix(transforms[i])
+		srt = transform_to_np_matrix(transform_to_gl(transforms[i]))
 		sc, rot, tr = np_decompose_matrix(srt)
 
 		node_obj = Node(
@@ -165,7 +165,7 @@ def create_armature_object_space(
 	# Skin with inverseBindMatrices
 	inv_bind_mat_list = []
 	for transform in inv_transforms:
-		mat = transform_to_np_matrix(transform)
+		mat = transform_to_np_matrix(transform_to_gl(transform))
 		inv_bind_mat_list.append(np.array(mat.T, dtype=np.float32))  # glTF column-major
 
 	inv_bind_mat_array = np.stack(inv_bind_mat_list, axis=0)  # shape = (num_bones, 4, 4)
@@ -203,8 +203,8 @@ def create_armature_hierarchy(
 	transforms = skeleton_data.default_obj_space_tr
 	inv_transforms = skeleton_data.default_inv_obj_space_tr
 
-	world_mats = [transform_to_np_matrix(t) for t in transforms]
-	inv_world_mats = [transform_to_np_matrix(t) for t in inv_transforms]
+	world_mats = [transform_to_np_matrix(transform_to_gl(t)) for t in transforms]
+	inv_world_mats = [transform_to_np_matrix(transform_to_gl(t)) for t in inv_transforms]
 	local_mats = []
 
 	# conversion to local space
@@ -267,8 +267,7 @@ def create_armature_hierarchy(
 	# inverse bind matrices for skinning
 	inv_bind_list = []
 
-	for mat_json in inv_transforms:
-		mat = transform_to_np_matrix(mat_json)
+	for mat in inv_world_mats:
 		inv_bind_list.append(np.array(mat.T, dtype=np.float32))
 
 	inv_bind_array = np.stack(inv_bind_list, axis=0)

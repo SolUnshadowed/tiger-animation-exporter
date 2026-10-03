@@ -2,9 +2,10 @@ import numpy as np
 
 from dataclasses import dataclass
 
+from libs.tag.data_types import Skeleton_Node_Def, Transform
+
 from src.decode_animation.decode_animation import Bone_Tracks
 from src.tag_readers.animation.read_animation import Animation_Data
-from src.tag_readers.skeleton.read_skeleton import Skeleton
 
 
 @dataclass(slots=True)
@@ -66,8 +67,14 @@ class Model_Properties:
 
 
 @dataclass(slots=True)
+class Gui_Skeleton:
+	bone_to_parent_offset: list
+	node_defs: list[Skeleton_Node_Def]
+
+
+@dataclass(slots=True)
 class Render_Data:
-	skeleton: Skeleton | None
+	skeleton: Gui_Skeleton
 	model_properties: list[None | Model_Properties]
 
 

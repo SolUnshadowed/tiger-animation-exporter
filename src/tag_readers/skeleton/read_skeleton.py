@@ -18,32 +18,17 @@ from src.tag_readers.skeleton.marathon_structures import MARATHON_Skeleton_Main_
 from src.tag_readers.skeleton.unified_structures import Unified_Skeleton_Main_Struct
 
 
-# Tiger
-# 	Z-up
-# 	X-forward
-# 	Y-right
-# Three.js
-# 	Y-up
-#	Z-forward
-#	X-right
-# Tiger to Three.js
-# [x, y, z] -> [y, z, x]
-#  x  y  z      x  y  z
-#  x_new = y_old
-#  y_new = z_old
-#  z_new = x_old
+
 
 def transform_to_glm_mat4(transform: Transform):
 	ts = transform.ts
 	r = transform.r
 
 	scale = glm.vec3(ts[3], ts[3], ts[3])
+	translation = glm.vec3(ts[0], ts[1], ts[2])
 
-	# [x, y, z] -> [y, z, x]
-	translation = glm.vec3(ts[1], ts[2], ts[0])
-
-	# [x, y, z] -> [y, z, x], but w is on 0th place (w, x, y, z) in glm quats
-	quat = glm.quat(r[3], r[1], r[2], r[0])
+	# w is on 0th place (w, x, y, z) in glm quats
+	quat = glm.quat(r[3], r[0], r[1], r[2])
 
 	return glm_compose_mat4(translation, quat, scale)
 

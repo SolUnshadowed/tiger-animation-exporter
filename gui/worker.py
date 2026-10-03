@@ -16,6 +16,7 @@ from libs.tiger.buffer_decoder.d1_vertex_types import d1_devalpha_types
 from libs.tiger.buffer_decoder.buffer_decoder import decode_vertex_buffer
 from libs.tiger.shaders.input_layouts import Input_Semantics
 from libs.tiger.common import Primitive_Type
+from libs.tag.data_types import Skeleton_Node_Def
 
 from src.tag_readers.skeleton.read_skeleton import read_skeleton, Skeleton
 from src.tag_readers.runtime_rig.read_runtime_rig import read_runtime_rig, Runtime_Rig_Data
@@ -33,6 +34,7 @@ from src.tag_readers.render_globals.read_s_vertex_input_layout_mapping import re
 
 from src.decode_animation.decode_animation import decode_animation, Bone_Tracks
 from src.export.animation.convert_animation_object_to_local import convert_obj_to_local
+from src.export.animation.convert_coord_system import tracks_bungie_to_gl, glm_mat4_bungie_to_gl
 from src.export.animation.gltf_export import create_gltf, add_animation_to_gltf, save_gltf
 from src.export.animation.json_export import add_animation_to_json, write_json_file
 from src.export.animation.enums import Bone_Name_Convention, Animation_Space, Export_Target
@@ -42,7 +44,7 @@ from src.scanner.classes import s_pattern_refs, s_dynamic_model_component_second
 from src.buffers.vertex_buffer import Vertex_Buffer
 from src.buffers.index_buffer import Index_Buffer
 
-from gui.worker_types import Tag_Model, Package_Model, Animation_Model, Model_Properties, Render_Data, Entity_Data
+from gui.worker_types import Tag_Model, Package_Model, Animation_Model, Model_Properties, Render_Data, Entity_Data, Gui_Skeleton
 
 
 logger = logging.getLogger(__name__)
@@ -453,7 +455,15 @@ class Package_Worker(QObject):
 		)
 		self.render_data_emitter.emit(
 			Render_Data(
-				skeleton,
+				Gui_Skeleton(
+					bone_to_parent_offset=[
+						glm_mat4_bungie_to_gl(mat)
+						for mat in skeleton.bone_to_parent_offset
+					],
+					node_defs=[
+						node_def for node_def in skeleton.node_defs
+					]
+				),
 				model_buffers
 			)
 		)
@@ -508,13 +518,14 @@ class Package_Worker(QObject):
 			cached_animation.animation_data, cached_animation.raw_animation, self.state.skeleton, self.state.rig
 		)
 		local_tracks = convert_obj_to_local(cached_animation.animation_data, retargeted_animation, self.state.skeleton)
+		gl_system_tracks =  tracks_bungie_to_gl(local_tracks)
 		self.state.animation = cached_animation
 
 		self.gui_animation_data_emitter.emit(
 			Animation_Model(
 				animation_handle_int,
 				cached_animation.animation_data,
-				local_tracks
+				gl_system_tracks
 			)
 		)
 
@@ -579,9 +590,11 @@ class Package_Worker(QObject):
 							logger.error(f"Could not add animation {handle_int:08X}")
 							continue
 
-						retargeted_animation = rig_retarget(
-							animation.animation_data, animation.raw_animation,
-							self.state.skeleton, self.state.rig
+						retargeted_animation = tracks_bungie_to_gl(
+							rig_retarget(
+								animation.animation_data, animation.raw_animation,
+								self.state.skeleton, self.state.rig
+							)
 						)
 
 						match self.export_settings.animation_space:
@@ -612,9 +625,11 @@ class Package_Worker(QObject):
 							logger.error(f"Could not add animation {handle_int:08X}")
 							continue
 
-						retargeted_animation = rig_retarget(
-							animation.animation_data, animation.raw_animation,
-							self.state.skeleton, self.state.rig
+						retargeted_animation = tracks_bungie_to_gl(
+							rig_retarget(
+								animation.animation_data, animation.raw_animation,
+								self.state.skeleton, self.state.rig
+							)
 						)
 
 						match self.export_settings.animation_space:
