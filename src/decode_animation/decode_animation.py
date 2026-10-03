@@ -87,7 +87,7 @@ def decompress_snorm16_quaternion_vector(components: np.ndarray) -> np.ndarray:
 	take frame matrix, shape (N, 3), components [w, x, y].
 	return matrix, shape (N, 4), components [x, y, z, w].
 	"""
-	x_raw = components[1]
+	x_raw = components[..., 1]
 
 	negate_z = (x_raw & 1).astype(bool)  # take the sign before clearing the bit
 
