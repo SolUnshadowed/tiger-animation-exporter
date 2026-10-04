@@ -16,7 +16,7 @@ class Unified_Client_Bootstrap_Header:
 class Unified_Client_Bootstrap:
 	header: Unified_Client_Bootstrap_Header
 
-	array: list[Client_Bootstrap_Array_Element]
+	array: list[Tag_Handle]
 
 
 @dataclass

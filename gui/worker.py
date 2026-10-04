@@ -150,7 +150,7 @@ class Package_Worker(QObject):
 		client_bootstrap_reader = Binary_Reader(self.manager.read_tag(client_bootstrap_tag_handle))
 		client_bootstrap = read_client_bootstrap(client_bootstrap_reader, game_version, endianness)
 
-		render_globals_tag_handle = client_bootstrap.array[1].handle
+		render_globals_tag_handle = client_bootstrap.array[1]
 		render_globals_reader = Binary_Reader(self.manager.read_tag(render_globals_tag_handle))
 		render_globals_header = read_render_globals_header(render_globals_reader, game_version, endianness)
 

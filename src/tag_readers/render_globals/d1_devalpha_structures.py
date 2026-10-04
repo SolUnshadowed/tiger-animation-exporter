@@ -23,7 +23,6 @@ class Client_Bootstrap_Header_D1_DEVALPHA:
 		return Unified_Client_Bootstrap_Header(self.file_size, self.arr_pointer)
 
 
-
 # ref 80802373
 @binary_struct()
 @dataclass
