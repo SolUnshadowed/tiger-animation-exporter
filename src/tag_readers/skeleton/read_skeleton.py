@@ -18,8 +18,6 @@ from src.tag_readers.skeleton.marathon_structures import MARATHON_Skeleton_Main_
 from src.tag_readers.skeleton.unified_structures import Unified_Skeleton_Main_Struct
 
 
-
-
 def transform_to_glm_mat4(transform: Transform):
 	ts = transform.ts
 	r = transform.r
