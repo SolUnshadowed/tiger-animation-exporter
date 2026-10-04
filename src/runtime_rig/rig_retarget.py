@@ -738,12 +738,12 @@ def rig_retarget(
 				skeleton_bones_matrices[middle_bone_index] = middle_new_matrix
 				bone_updated[middle_bone_index] = True
 				skeleton_bones_matrices[end_bone_index] = end_new_matrix
-				'''
+
 				propagate(
 					start_bone_index, middle_bone_index, end_bone_index,
 					pre_ik_bones_matrices, skeleton_bones_matrices, bones_relations
 				)
-				'''
+
 		# store frame into converted animation
 		for bone_index, updated in enumerate(bone_updated):
 			if not updated:
