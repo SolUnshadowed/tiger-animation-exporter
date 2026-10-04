@@ -6,6 +6,8 @@ from libs.matrix_operations import (
 	glm_axis_x, glm_axis_y, glm_axis_z, X
 )
 
+from libs.tag.data_types import Skeleton_Node_Def
+
 
 def from_to(a: glm.vec3, b: glm.vec3, pole: glm.vec3):
     if glm.dot(a, b) < -0.9999:
@@ -172,3 +174,39 @@ def ik_3_solve_with_pole(
     )
 
     return (s, m, e)
+
+def descendants(bone_index: int, node_defs: list[Skeleton_Node_Def], stop_at: set[int]) -> list[int]:
+    start_node_def = node_defs[bone_index]
+
+    stack = [start_node_def.first_child_node_index]
+
+    result = []
+
+    while stack:
+        index = stack.pop()
+        if index < 0:
+            continue
+
+        node = node_defs[index]
+
+        # put siblings in case this node is in stop_at
+        stack.append(node.next_sibling_node_index)
+
+        if index in stop_at:
+            continue
+
+        # if it is not in stop_at -> add to result, put first child in stack
+        result.append(index)
+        stack.append(node.first_child_node_index)
+
+    return result
+
+
+def propagate(start: int, middle: int, end: int, pre_ik: glm.array, post_ik: glm.array, node_defs: list[Skeleton_Node_Def]):
+    chain = {start, middle, end}
+
+    for bone_index in chain:
+        delta = post_ik[bone_index] * glm.inverse(pre_ik[bone_index])
+
+        for child in descendants(bone_index, node_defs, stop_at=chain):
+            post_ik[child] = delta * pre_ik[child]
