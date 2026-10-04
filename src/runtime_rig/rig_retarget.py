@@ -21,7 +21,7 @@ from src.tag_readers.runtime_rig.unified_structures import (
 	Unified_Constraint, Constraint_Type,
 	IK_Function_Type, Space_Type, Space_Def
 )
-from .helpers import ik_3_solve_no_pole
+from .helpers import ik_3_solve_no_pole, propagate
 
 logger = logging.getLogger(__name__)
 IDENTITY_MAT4 = glm.mat4()
@@ -109,7 +109,7 @@ def calc_control_limit(rig: Runtime_Rig_Data, animation_rig_components: Tag_Arra
 
 
 def build_bone_chain(
-	skeleton_node_defs: Tag_Array[Skeleton_Node_Def],
+	skeleton_node_defs: list[Skeleton_Node_Def],
 	start_bone_index: int,
 	end_bone_index: int
 ) -> tuple[int, ...]:
@@ -239,7 +239,7 @@ def rig_retarget(
 	rest_matrices_object_space = skeleton.default_obj_space_matrices
 	# rest pose in parent space
 	rest_matrices_parent_space = skeleton.bone_to_parent_offset
-	num_bones = bones_relations.length
+	num_bones = len(bones_relations)
 	# compute rig and skeleton cache
 	rig_cache = build_runtime_rig_cache(skeleton, rig)
 	log_rig_cache(rig_cache)
@@ -648,6 +648,12 @@ def rig_retarget(
 
 			# functions this control has
 
+		# store copy of pre ik matrices
+		pre_ik_bones_matrices = glm.array.zeros(num_bones, glm.mat4)
+
+		for i in range(len(skeleton_bones_matrices)):
+			pre_ik_bones_matrices[i] = glm.mat4(skeleton_bones_matrices[i])
+
 		for bone_index in rig_cache.ik_3_chains:
 			control_index = bone_to_control[bone_index]
 			# RFK chain
@@ -732,7 +738,12 @@ def rig_retarget(
 				skeleton_bones_matrices[middle_bone_index] = middle_new_matrix
 				bone_updated[middle_bone_index] = True
 				skeleton_bones_matrices[end_bone_index] = end_new_matrix
-
+				'''
+				propagate(
+					start_bone_index, middle_bone_index, end_bone_index,
+					pre_ik_bones_matrices, skeleton_bones_matrices, bones_relations
+				)
+				'''
 		# store frame into converted animation
 		for bone_index, updated in enumerate(bone_updated):
 			if not updated:
