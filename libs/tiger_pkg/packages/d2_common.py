@@ -4,7 +4,7 @@ from typing import BinaryIO
 
 from libs.binary_reader import binary_struct, Array, u8, u16, u32, u64, Endianness, Binary_Reader
 from libs.tiger_pkg import oodle
-from libs.tiger_pkg.tag_handle import Tag_Handle
+from libs.tiger_pkg.tag_handle import Tag_Handle, Tag_Handle_64
 from libs.tiger_pkg.game_version import Game_Version
 from libs.tiger_pkg.enums import Package_Language
 from libs.tiger_pkg.packages.package_common import Unified_Entry_Header, Package
@@ -55,8 +55,8 @@ class Block_Header:
 @binary_struct(size=16)
 @dataclass
 class Hash_Table_Entry:
-	hash64: Annotated[int, u64]
-	hash32: Tag_Handle
+	handle_64: Tag_Handle_64
+	handle_32: Tag_Handle
 	reference: Tag_Handle
 
 

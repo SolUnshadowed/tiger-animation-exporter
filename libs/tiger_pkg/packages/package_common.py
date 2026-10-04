@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Annotated
 
 from libs.binary_reader import Endianness, binary_struct, Binary_Readable, u64, u32
-from libs.tiger_pkg.tag_handle import Tag_Handle
+from libs.tiger_pkg.tag_handle import Tag_Handle, Tag_Handle_64
 from libs.tiger_pkg.packages import exceptions as err
 from libs.tiger_pkg.enums import Package_Platform
 
@@ -45,7 +45,7 @@ class Unified_Entry_Header:
 
 @dataclass(slots=True)
 class Unified_Hash_Table_Entry:
-	handle_64: int
+	handle_64: Tag_Handle_64
 	handle_32: Tag_Handle
 	reference: Tag_Handle
 

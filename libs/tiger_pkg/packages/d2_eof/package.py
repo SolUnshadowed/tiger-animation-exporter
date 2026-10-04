@@ -74,8 +74,8 @@ class Package_D2_EOF(Package_Common_D2):
 	def get_hash64_table(self) -> list[Unified_Hash_Table_Entry]:
 		return [
 			Unified_Hash_Table_Entry(
-				handle_64=entry.hash64,
-				handle_32=entry.hash32,
+				handle_64=entry.handle_64,
+				handle_32=entry.handle_32,
 				reference=entry.reference,
 			)
 			for entry in self.wide_hashes
