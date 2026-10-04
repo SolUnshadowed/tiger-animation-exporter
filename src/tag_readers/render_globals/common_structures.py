@@ -6,32 +6,6 @@ from libs.tiger.shaders.input_layouts import Input_Semantics
 from libs.tiger_pkg.tag_handle import Tag_Handle
 
 
-'''
-common have the same layouts for all games, while unified serve as type annotation erasure
-'''
-
-
-'''
-dev 8091C000
-roi 80AF2000
-
-	SRenderGlobals
-	dev 8091C002
-	roi 80AF2001 
-	
-		SVertexInputLayouts	
-		dev 8091C005
-		roi 80AF2004
-		
-			SVertexInputElementSets  
-			dev 8091C008 ref 808022E6
-			roi 80AF2007
-			
-				SVertexInputElementSet: array types: dev: 808022E4, roi: 80801A98
-				elements are basically vec_pointer to arrays of S_Vertex_Input_Element
-'''
-
-
 # dev alpha type: 80800427
 # roi type: 808005D7
 @binary_struct()
@@ -41,8 +15,9 @@ class Client_Bootstrap_Array_Element:
 	handle: Tag_Handle
 
 
-# d1_devalpha ref: 808022E1
-# d1_roi ref: 80801BD7
+# d1_devalpha type: 808022E1
+# d1_roi type: 80801BD7
+# d2_eof type: 808022E1
 @binary_struct()
 @dataclass
 class S_Vertex_Input_Element:
@@ -51,9 +26,9 @@ class S_Vertex_Input_Element:
 	format: Annotated[int, u8]
 
 
-# basically a layout for each buffer
-# d1_devalpha ref: 808022E7
-# d1_roi ref: 80801A89
+# basically a layout for all buffers
+# d1_devalpha type: 808022E7
+# d1_roi type: 80801A89
 @binary_struct(size=28)
 @dataclass
 class S_Vertex_Layout:
