@@ -21,7 +21,7 @@ def convert_obj_to_local(
 	frames = animation_data.animation_header.frame_count
 
 	skeleton_node_defs = skeleton.node_defs
-	num_bones = skeleton_node_defs.length
+	num_bones = len(skeleton_node_defs)
 	skeleton_bones_matrices = glm.array.zeros(num_bones, glm.mat4)
 
 	# pre-allocate data filled with identity values

@@ -54,15 +54,20 @@ class Skeleton:
 		"bone_to_parent_offset"
 	]
 
-	node_defs: Tag_Array[Skeleton_Node_Def]
-	default_obj_space_tr: Tag_Array[Transform]
-	default_inv_obj_space_tr: Tag_Array[Transform]
+	node_defs: list[Skeleton_Node_Def]
+	default_obj_space_tr: list[Transform]
+	default_inv_obj_space_tr: list[Transform]
 	default_obj_space_matrices: list
 	default_inv_obj_space_matrices: list
 	bone_to_parent_offset: list
 
 
-	def __init__(self, node_defs: Tag_Array[Skeleton_Node_Def], default_obj_space_tr, default_inv_obj_space_tr):
+	def __init__(
+		self,
+		node_defs: list[Skeleton_Node_Def],
+		default_obj_space_tr: list[Transform],
+		default_inv_obj_space_tr: list[Transform]
+	):
 		self.node_defs = node_defs
 		self.default_obj_space_tr = default_obj_space_tr
 		self.default_inv_obj_space_tr = default_inv_obj_space_tr
@@ -111,11 +116,13 @@ def read_skeleton_data(
 
 	bone_hierarchy = Tag_Array[Skeleton_Node_Def](
 		reader, main_struct.bone_hierarchy_pointer, Skeleton_Node_Def, endianness, bitness
-	)
+	).payload
 	obj_space_tr = Tag_Array[Transform](
-		reader, main_struct.obj_space_tr_pointer, Transform, endianness, bitness)
+		reader, main_struct.obj_space_tr_pointer, Transform, endianness, bitness
+	).payload
 	inv_obj_space_tr = Tag_Array[Transform](
-		reader, main_struct.inv_obj_space_tr_pointer, Transform, endianness, bitness)
+		reader, main_struct.inv_obj_space_tr_pointer, Transform, endianness, bitness
+	).payload
 
 	return Skeleton(
 		node_defs=bone_hierarchy,
