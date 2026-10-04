@@ -256,7 +256,12 @@ def rig_retarget(
 		logger.info(f"\tcontrol {ignored} [bone {control_to_bone[ignored]}]")
 
 	# intermediate storage
+	# using pose as base character state
 	skeleton_bones_matrices = glm.array.zeros(num_bones, glm.mat4)
+
+	for i in range(len(rest_matrices_object_space)):
+		skeleton_bones_matrices[i] = glm.mat4(rest_matrices_object_space[i])
+
 	# result animation defaults
 	converted_animation = [
 		Bone_Tracks(
@@ -297,7 +302,7 @@ def rig_retarget(
 				skeleton_node_def = bones_relations[bone_index]
 				parent_bone_index = skeleton_node_def.parent_node_index
 
-				if parent_bone_index > -1 and bone_updated[parent_bone_index]:
+				if parent_bone_index > -1:
 					parent_matrix = skeleton_bones_matrices[parent_bone_index]
 					origin_tr = glm_get_translation(parent_matrix)
 					origin_rot = glm_get_quat(parent_matrix)
@@ -336,11 +341,11 @@ def rig_retarget(
 
 							if parent_bone_index == -1:
 								parent_matrix = IDENTITY_MAT4
-							elif bone_updated[parent_bone_index]:
-								parent_matrix = skeleton_bones_matrices[parent_bone_index]
 							else:
-								logger.warning(f"point_and_orient // tr constraint 'relative': bone {parent_bone_index} is not updated yet!")
-								continue
+								parent_matrix = skeleton_bones_matrices[parent_bone_index]
+
+								if not bone_updated[parent_bone_index]:
+									logger.warning(f"point_and_orient // tr constraint 'relative': bone {parent_bone_index} is not updated yet!")
 
 							origin_tr = glm_get_translation(parent_matrix)
 
@@ -350,7 +355,7 @@ def rig_retarget(
 							if parent_bone_index == -1:
 								origin_tr = glm_get_translation(rest_matrices_object_space[bone_index])
 
-							elif bone_updated[parent_bone_index]:
+							else:
 								parent_matrix = skeleton_bones_matrices[parent_bone_index]
 								parent_tr = glm_get_translation(parent_matrix)
 								parent_rot = glm_get_quat(parent_matrix)
@@ -360,9 +365,8 @@ def rig_retarget(
 
 								origin_tr = parent_tr + parent_rot * parent_offset_tr
 
-							else:
-								logger.warning(f"point_and_orient // tr constraint 'parent': bone {parent_bone_index} is not updated yet!")
-								continue
+								if not bone_updated[parent_bone_index]:
+									logger.warning(f"point_and_orient // tr constraint 'parent': bone {parent_bone_index} is not updated yet!")
 
 						case Space_Type.OBJECT:  # 2
 							origin_tr = glm_get_translation(rest_matrices_object_space[0])
@@ -381,19 +385,20 @@ def rig_retarget(
 
 							if parent_0_index == -1:
 								parent_0_matrix = IDENTITY_MAT4
-							elif bone_updated[parent_0_index]:
-								parent_0_matrix = skeleton_bones_matrices[parent_0_index]
 							else:
-								logger.warning(f"point_and_orient // tr constraint 'average': bone 0 {parent_0_index} is not updated yet!")
-								continue
+								parent_0_matrix = skeleton_bones_matrices[parent_0_index]
+
+								if not bone_updated[parent_0_index]:
+									logger.warning(f"point_and_orient // tr constraint 'average': bone 0 {parent_0_index} is not updated yet!")
+
 
 							if parent_1_index == -1:
 								parent_1_matrix = IDENTITY_MAT4
-							elif bone_updated[parent_1_index]:
-								parent_1_matrix = skeleton_bones_matrices[parent_1_index]
 							else:
-								logger.warning(f"point_and_orient // tr constraint 'average': bone 1 {parent_1_index} is not updated yet!")
-								continue
+								parent_1_matrix = skeleton_bones_matrices[parent_1_index]
+
+								if not bone_updated[parent_1_index]:
+									logger.warning(f"point_and_orient // tr constraint 'average': bone 1 {parent_1_index} is not updated yet!")
 
 							origin_tr = 0.5 * (
 								glm_get_translation(parent_0_matrix) +
@@ -409,11 +414,11 @@ def rig_retarget(
 
 							if parent_bone_index == -1:
 								parent_matrix = IDENTITY_MAT4
-							elif bone_updated[parent_bone_index]:
-								parent_matrix = skeleton_bones_matrices[parent_bone_index]
 							else:
-								logger.warning(f"point_and_orient // rot constraint 'relative': bone {parent_bone_index} is not updated yet!")
-								continue
+								parent_matrix = skeleton_bones_matrices[parent_bone_index]
+
+								if not bone_updated[parent_bone_index]:
+									logger.warning(f"point_and_orient // rot constraint 'relative': bone {parent_bone_index} is not updated yet!")
 
 							origin_rot = glm_get_quat(parent_matrix)
 
@@ -423,7 +428,7 @@ def rig_retarget(
 							if parent_bone_index == -1:
 								origin_rot = glm_get_quat(rest_matrices_object_space[bone_index])
 
-							elif bone_updated[parent_bone_index]:
+							else:
 								parent_matrix = skeleton_bones_matrices[parent_bone_index]
 								parent_rot = glm_get_quat(parent_matrix)
 
@@ -431,9 +436,9 @@ def rig_retarget(
 								parent_offset_rot = glm_get_quat(parent_offset_matrix)
 
 								origin_rot = parent_rot * parent_offset_rot
-							else:
-								logger.warning(f"point_and_orient // rot constraint 'parent': bone {parent_bone_index} is not updated yet!")
-								continue
+
+								if not bone_updated[parent_bone_index]:
+									logger.warning(f"point_and_orient // rot constraint 'parent': bone {parent_bone_index} is not updated yet!")
 
 						case Space_Type.OBJECT:  # 2
 							origin_rot = glm_get_quat(rest_matrices_object_space[0])
@@ -452,19 +457,19 @@ def rig_retarget(
 
 							if parent_0_index == -1:
 								parent_0_matrix = IDENTITY_MAT4
-							elif bone_updated[parent_0_index]:
-								parent_0_matrix = skeleton_bones_matrices[parent_0_index]
 							else:
-								logger.warning(f"point_and_orient // rot constraint 'average': bone 0 {parent_0_index} is not updated yet!")
-								continue
+								parent_0_matrix = skeleton_bones_matrices[parent_0_index]
+
+								if not bone_updated[parent_0_index]:
+									logger.warning(f"point_and_orient // rot constraint 'average': bone 0 {parent_0_index} is not updated yet!")
 
 							if parent_1_index == -1:
 								parent_1_matrix = IDENTITY_MAT4
-							elif bone_updated[parent_1_index]:
-								parent_1_matrix = skeleton_bones_matrices[parent_1_index]
 							else:
-								logger.warning(f"point_and_orient // rot constraint 'average': bone 1 {parent_1_index} is not updated yet!")
-								continue
+								parent_1_matrix = skeleton_bones_matrices[parent_1_index]
+
+								if not bone_updated[parent_1_index]:
+									logger.warning(f"point_and_orient // rot constraint 'average': bone 1 {parent_1_index} is not updated yet!")
 
 							parent_0_rot = glm_get_quat(parent_0_matrix)
 							parent_1_rot = glm_get_quat(parent_1_matrix)
@@ -500,11 +505,12 @@ def rig_retarget(
 
 							if parent_bone_index == -1:
 								parent_matrix = IDENTITY_MAT4
-							elif bone_updated[parent_bone_index]:
-								parent_matrix = skeleton_bones_matrices[parent_bone_index]
 							else:
-								logger.warning(f"parent // rot constraint 'relative': bone {parent_bone_index} is not updated yet!")
-								continue
+								parent_matrix = skeleton_bones_matrices[parent_bone_index]
+
+								if not bone_updated[parent_bone_index]:
+									logger.warning(f"parent // rot constraint 'relative': bone {parent_bone_index} is not updated yet!")
+
 
 							origin_tr = glm_get_translation(parent_matrix)
 							origin_rot = glm_get_quat(parent_matrix)
@@ -515,7 +521,7 @@ def rig_retarget(
 							if parent_bone_index == -1:
 								origin_rot = glm_get_quat(rest_matrices_object_space[bone_index])
 								origin_tr = glm_get_translation(rest_matrices_object_space[bone_index])
-							elif bone_updated[parent_bone_index]:
+							else:
 								parent_matrix = skeleton_bones_matrices[parent_bone_index]
 								parent_tr = glm_get_translation(parent_matrix)
 								parent_rot = glm_get_quat(parent_matrix)
@@ -526,9 +532,9 @@ def rig_retarget(
 
 								origin_tr = parent_tr + parent_rot * parent_offset_tr
 								origin_rot = parent_rot * parent_offset_rot
-							else:
-								logger.warning(f"parent // rot constraint 'parent': bone {parent_bone_index} is not updated yet!")
-								continue
+
+								if not bone_updated[parent_bone_index]:
+									logger.warning(f"parent // rot constraint 'parent': bone {parent_bone_index} is not updated yet!")
 
 						case Space_Type.OBJECT:  # 2
 							origin_tr = glm_get_translation(rest_matrices_object_space[0])
@@ -552,19 +558,19 @@ def rig_retarget(
 
 							if parent_0_index == -1:
 								parent_0_matrix = IDENTITY_MAT4
-							elif bone_updated[parent_0_index]:
-								parent_0_matrix = skeleton_bones_matrices[parent_0_index]
 							else:
-								logger.warning(f"parent // rot constraint 'average': bone 0 {parent_0_index} is not updated yet!")
-								continue
+								parent_0_matrix = skeleton_bones_matrices[parent_0_index]
+
+								if not bone_updated[parent_0_index]:
+									logger.warning(f"parent // rot constraint 'average': bone 0 {parent_0_index} is not updated yet!")
 
 							if parent_1_index == -1:
 								parent_1_matrix = IDENTITY_MAT4
-							elif bone_updated[parent_1_index]:
-								parent_1_matrix = skeleton_bones_matrices[parent_1_index]
 							else:
-								logger.warning(f"parent // rot constraint 'average': bone 1 {parent_1_index} is not updated yet!")
-								continue
+								parent_1_matrix = skeleton_bones_matrices[parent_1_index]
+								if not bone_updated[parent_1_index]:
+									logger.warning(f"parent // rot constraint 'average': bone 1 {parent_1_index} is not updated yet!")
+
 
 							parent_0_tr = glm_get_translation(parent_0_matrix)
 							parent_0_rot = glm_get_quat(parent_0_matrix)
@@ -588,11 +594,10 @@ def rig_retarget(
 
 									if parent_bone_index == -1:
 										parent_matrix = IDENTITY_MAT4
-									elif bone_updated[parent_bone_index]:
-										parent_matrix = skeleton_bones_matrices[parent_bone_index]
 									else:
-										logger.warning(f"parent // tr constraint 'relative': bone {parent_bone_index} is not updated yet!")
-										continue
+										parent_matrix = skeleton_bones_matrices[parent_bone_index]
+										if not bone_updated[parent_bone_index]:
+											logger.warning(f"parent // tr constraint 'relative': bone {parent_bone_index} is not updated yet!")
 
 									origin_tr = glm_get_translation(parent_matrix)
 
@@ -601,7 +606,7 @@ def rig_retarget(
 
 									if parent_bone_index == -1:
 										origin_tr = glm_get_translation(rest_matrices_object_space[bone_index])
-									elif bone_updated[parent_bone_index]:
+									else:
 										parent_matrix = skeleton_bones_matrices[parent_bone_index]
 										parent_tr = glm_get_translation(parent_matrix)
 										parent_rot = glm_get_quat(parent_matrix)
@@ -610,9 +615,10 @@ def rig_retarget(
 										parent_offset_tr = glm_get_translation(parent_offset_matrix)
 
 										origin_tr = parent_tr + parent_rot * parent_offset_tr
-									else:
-										logger.warning(f"parent // tr constraint 'parent': bone {parent_bone_index} is not updated yet!")
-										continue
+
+										if not bone_updated[parent_bone_index]:
+											logger.warning(f"parent // tr constraint 'parent': bone {parent_bone_index} is not updated yet!")
+
 
 								case Space_Type.AVERAGE:
 									parent_0_index = translation_space.bone_index_0
@@ -620,19 +626,20 @@ def rig_retarget(
 
 									if parent_0_index == -1:
 										parent_0_matrix = IDENTITY_MAT4
-									elif bone_updated[parent_0_index]:
-										parent_0_matrix = skeleton_bones_matrices[parent_0_index]
 									else:
-										logger.warning(f"parent // tr constraint 'average': bone {parent_0_index} is not updated yet!")
-										continue
+										parent_0_matrix = skeleton_bones_matrices[parent_0_index]
+
+										if not bone_updated[parent_0_index]:
+											logger.warning(f"parent // tr constraint 'average': bone {parent_0_index} is not updated yet!")
 
 									if parent_1_index == -1:
 										parent_1_matrix = IDENTITY_MAT4
-									elif bone_updated[parent_1_index]:
-										parent_1_matrix = skeleton_bones_matrices[parent_1_index]
 									else:
-										logger.warning(f"parent // tr constraint 'average': bone {parent_1_index} is not updated yet!")
-										continue
+										parent_1_matrix = skeleton_bones_matrices[parent_1_index]
+
+										if not bone_updated[parent_1_index]:
+											logger.warning(f"parent // tr constraint 'average': bone {parent_1_index} is not updated yet!")
+
 
 									parent_0_tr = glm_get_translation(parent_0_matrix)
 									parent_1_tr = glm_get_translation(parent_1_matrix)
@@ -646,7 +653,6 @@ def rig_retarget(
 
 					bone_updated[bone_index] = True
 
-			# functions this control has
 
 		# store copy of pre ik matrices
 		pre_ik_bones_matrices = glm.array.zeros(num_bones, glm.mat4)
@@ -655,99 +661,75 @@ def rig_retarget(
 			pre_ik_bones_matrices[i] = glm.mat4(skeleton_bones_matrices[i])
 
 		for bone_index in rig_cache.rfk_chains:
-			control_index = bone_to_control[bone_index]
-			# RFK chain
 			MAX_INBETWEEN = 16
 
-			constraint = constraints[control_index]
+			chain = rig_cache.rfk_chains[bone_index]
 
-			if constraint.ik_function_type == IK_Function_Type.RFK:
-				if bone_index not in rig_cache.rfk_chains:
-					raise Invalid_Rig_Error(
-						f"{bone_index} should be an end of IK chain, but chain not found"
-					)
+			start_bone_index = chain.start_bone_index
+			end_bone_index = chain.end_bone_index
 
-				chain = rig_cache.rfk_chains[bone_index]
+			if not bone_updated[start_bone_index]:
+				logger.warning(f"rfk function // start bone {start_bone_index} is not updated yet!")
 
-				start_bone_index = chain.start_bone_index
-				end_bone_index = chain.end_bone_index
+			if not bone_updated[end_bone_index]:
+				logger.warning(f"rfk function // end bone {end_bone_index} is not updated yet!")
 
-				if not bone_updated[start_bone_index]:
-					logger.warning(f"rfk function // start bone {start_bone_index} is not updated yet!")
-					continue
+			inbetween = chain.bones_indices[1:-1][-MAX_INBETWEEN:]
+			n = len(inbetween)
 
-				if not bone_updated[end_bone_index]:
-					logger.warning(f"rfk function // end bone {end_bone_index} is not updated yet!")
-					continue
+			if n > 0:
+				pose_start = skeleton_bones_matrices[start_bone_index]
+				rest_start_inv = glm.inverse(rest_matrices_object_space[start_bone_index])
 
-				inbetween = chain.bones_indices[1:-1][-MAX_INBETWEEN:]
-				n = len(inbetween)
+				# end's current offset from start
+				relative = glm.inverse(pose_start) * skeleton_bones_matrices[end_bone_index]
 
-				if n > 0:
-					pose_start = skeleton_bones_matrices[start_bone_index]
-					rest_start_inv = glm.inverse(rest_matrices_object_space[start_bone_index])
+				for k, bone in enumerate(inbetween, start=1):
+					t = k / (n + 1)
 
-					# end's current offset from start
-					relative = glm.inverse(pose_start) * skeleton_bones_matrices[end_bone_index]
-
-					for k, bone in enumerate(inbetween, start=1):
-						t = k / (n + 1)
-
-						# intermediate bone relative to start in rest pose
-						rest_relative = rest_start_inv * rest_matrices_object_space[bone]
-						# part of difference between start and end
-						distributed = glm_interpolate_mat4(IDENTITY_MAT4, relative, t)
-						# mix relative rest and difference
-						skeleton_bones_matrices[bone] = pose_start * glm_interpolate_mat4(rest_relative, distributed, t)
-						bone_updated[bone] = True
+					# intermediate bone relative to start in rest pose
+					rest_relative = rest_start_inv * rest_matrices_object_space[bone]
+					# part of difference between start and end
+					distributed = glm_interpolate_mat4(IDENTITY_MAT4, relative, t)
+					# mix relative rest and difference
+					skeleton_bones_matrices[bone] = pose_start * glm_interpolate_mat4(rest_relative, distributed, t)
+					bone_updated[bone] = True
 
 		for bone_index in rig_cache.ik_3_chains:
-			control_index = bone_to_control[bone_index]
+			chain = rig_cache.ik_3_chains[bone_index]
 
-			constraint = constraints[control_index]
-			# IK_3 chain
-			if constraint.ik_function_type == IK_Function_Type.IK_3:
-				if bone_index not in rig_cache.ik_3_chains:
-					raise Invalid_Rig_Error(
-						f"{bone_index} should be an end of IK chain, but chain not found"
-					)
+			start_bone_index = chain.start_bone_index
+			middle_bone_index = chain.target_bone_index
+			end_bone_index = chain.end_bone_index
 
-				chain = rig_cache.ik_3_chains[bone_index]
+			start_matrix = glm.mat4(skeleton_bones_matrices[start_bone_index]) # to copy matrix
+			middle_matrix = start_matrix * rest_matrices_parent_space[middle_bone_index]
+			end_matrix = middle_matrix * rest_matrices_parent_space[end_bone_index]
 
-				start_bone_index = chain.start_bone_index
-				middle_bone_index = chain.target_bone_index
-				end_bone_index = chain.end_bone_index
+			target_matrix = skeleton_bones_matrices[end_bone_index]
 
-				start_matrix = glm.mat4(skeleton_bones_matrices[start_bone_index]) # to copy matrix
-				middle_matrix = start_matrix * rest_matrices_parent_space[middle_bone_index]
-				end_matrix = middle_matrix * rest_matrices_parent_space[end_bone_index]
+			# TODO: add propagate and ik_3_solve_with_pole
+			arr = ik_3_solve_no_pole(target_matrix, start_matrix, middle_matrix, end_matrix)
 
-				target_matrix = skeleton_bones_matrices[end_bone_index]
+			if arr is None:
+				continue
 
-				# TODO: add propagate and ik_3_solve_with_pole
-				arr = ik_3_solve_no_pole(target_matrix, start_matrix, middle_matrix, end_matrix)
+			start_new_matrix, middle_new_matrix, end_new_matrix = arr
 
-				if arr is None:
-					continue
+			if start_bone_index > 0:
+				skeleton_bones_matrices[start_bone_index] = start_new_matrix
 
-				start_new_matrix, middle_new_matrix, end_new_matrix = arr
+			skeleton_bones_matrices[middle_bone_index] = middle_new_matrix
+			bone_updated[middle_bone_index] = True
+			skeleton_bones_matrices[end_bone_index] = end_new_matrix
 
-				if start_bone_index > 0:
-					skeleton_bones_matrices[start_bone_index] = start_new_matrix
-
-				skeleton_bones_matrices[middle_bone_index] = middle_new_matrix
-				bone_updated[middle_bone_index] = True
-				skeleton_bones_matrices[end_bone_index] = end_new_matrix
-
-				propagate(
-					start_bone_index, middle_bone_index, end_bone_index,
-					pre_ik_bones_matrices, skeleton_bones_matrices, bones_relations
-				)
+			propagate(
+				start_bone_index, middle_bone_index, end_bone_index,
+				pre_ik_bones_matrices, skeleton_bones_matrices, bones_relations
+			)
 
 		# store frame into converted animation
 		for bone_index, updated in enumerate(bone_updated):
-			if not updated:
-				continue
 
 			bone_matrix = skeleton_bones_matrices[bone_index]
 
