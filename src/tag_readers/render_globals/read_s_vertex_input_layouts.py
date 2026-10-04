@@ -3,6 +3,7 @@ from libs.tiger_pkg.game_version import Game_Version
 
 from src.tag_readers.render_globals.d1_devalpha_structures import S_Vertex_Input_Layouts_D1_DEVALPHA
 from src.tag_readers.render_globals.d1_roi_structures import S_Vertex_Input_Layouts_D1_ROI
+from src.tag_readers.render_globals.d2_eof_structures import S_Vertex_Input_Layouts_D2_EOF
 from src.tag_readers.render_globals.unified_structures import Unified_S_Vertex_Input_Layouts
 
 
@@ -16,5 +17,7 @@ def read_s_vertex_input_layouts(
 			return reader.read_struct(S_Vertex_Input_Layouts_D1_DEVALPHA, override_endianness=endianness).to_unified()
 		case Game_Version.D1_ROI:
 			return reader.read_struct(S_Vertex_Input_Layouts_D1_ROI, override_endianness=endianness).to_unified()
+		case Game_Version.D2_EOF | Game_Version.MARATHON:
+			return reader.read_struct(S_Vertex_Input_Layouts_D2_EOF, override_endianness=endianness).to_unified()
 		case _:
 			raise NotImplementedError(f"read_s_vertex_input_layouts is not implemented for game_version {game_version}")

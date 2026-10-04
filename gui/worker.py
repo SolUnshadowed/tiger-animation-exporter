@@ -27,7 +27,8 @@ from src.tag_readers.s_dynamic_model_component.read_s_dynamic_model_component im
 from src.tag_readers.s_entity_model.read_s_entity_model import read_s_entity_model
 from src.tag_readers.buffers.read_buffers import read_index_buffer, read_vertex_buffer
 from src.tag_readers.render_globals.read_client_bootstrap import read_client_bootstrap
-from src.tag_readers.render_globals.read_render_globals import read_render_globals_header
+from src.tag_readers.render_globals.read_render_globals import read_render_globals
+from src.tag_readers.render_globals.d1_roi_structures import S_Render_Globals_Header_D1_ROI
 from src.tag_readers.render_globals.read_s_vertex_input_layouts import read_s_vertex_input_layouts
 from src.tag_readers.render_globals.read_s_vertex_input_element_sets import read_s_vertex_element_sets, S_Vertex_Input_Element_Set
 from src.tag_readers.render_globals.read_s_vertex_input_layout_mapping import read_s_vertex_input_layout_mapping, S_Vertex_Layout
@@ -134,6 +135,8 @@ class Package_Worker(QObject):
 			self.vertex_data_2 = self.get_vertex_layouts(2)
 			logger.info("Vertex element sets are loaded")
 		except Exception:
+			import traceback
+			traceback.print_exc()
 			logger.warning("Vertex element sets were not loaded")
 
 		self.worker_started.emit(True)
@@ -152,9 +155,18 @@ class Package_Worker(QObject):
 
 		render_globals_tag_handle = client_bootstrap.array[1]
 		render_globals_reader = Binary_Reader(self.manager.read_tag(render_globals_tag_handle))
-		render_globals_header = read_render_globals_header(render_globals_reader, game_version, endianness)
+		render_globals_header = read_render_globals(render_globals_reader, game_version, endianness)
 
-		input_layouts_tag_handle = render_globals_header.input_layouts_tag_handle
+		match game_version:
+			case Game_Version.D1_DEV_ALPHA | Game_Version.D1_ROI:
+				input_layouts_tag_handle = render_globals_header.input_layouts_tag_handle
+			case Game_Version.D2_EOF | Game_Version.MARATHON:
+				# seems like there are two render globals? one is named tag and other is the same as in d1?
+				render_globals_next = Binary_Reader(self.manager.read_tag(render_globals_header.input_layouts_tag_handle))
+				# and reusing roi tag...
+				render_globals = render_globals_next.read_struct(S_Render_Globals_Header_D1_ROI, override_endianness=endianness)
+				input_layouts_tag_handle = render_globals.input_layouts_tag_handle
+
 		input_layouts_reader = Binary_Reader(self.manager.read_tag(input_layouts_tag_handle))
 		input_layouts = read_s_vertex_input_layouts(input_layouts_reader, game_version, endianness)
 

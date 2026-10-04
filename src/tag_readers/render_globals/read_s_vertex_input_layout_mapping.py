@@ -7,6 +7,7 @@ from libs.tag.tag_pointers import Base_Vec_Pointer
 
 from src.tag_readers.render_globals.d1_devalpha_structures import S_Vertex_Input_Layout_Mapping_Header_D1_DEVALPHA
 from src.tag_readers.render_globals.d1_roi_structures import S_Vertex_Input_Layout_Mapping_Header_D1_ROI
+from src.tag_readers.render_globals.d2_eof_structures import S_Vertex_Input_Layout_Mapping_Header_D2_EOF
 from src.tag_readers.render_globals.unified_structures import Unified_S_Vertex_Input_Layout_Mapping_Header
 from src.tag_readers.render_globals.common_structures import S_Vertex_Layout
 
@@ -27,6 +28,8 @@ def read_s_vertex_input_layout_mapping_header(
 			return reader.read_struct(S_Vertex_Input_Layout_Mapping_Header_D1_DEVALPHA, override_endianness=endianness).to_unified()
 		case Game_Version.D1_ROI:
 			return reader.read_struct(S_Vertex_Input_Layout_Mapping_Header_D1_ROI, override_endianness=endianness).to_unified()
+		case Game_Version.D2_EOF | Game_Version.MARATHON:
+			return reader.read_struct(S_Vertex_Input_Layout_Mapping_Header_D2_EOF, override_endianness=endianness).to_unified()
 		case _:
 			raise NotImplementedError(f"read_s_vertex_input_element_sets_header is not supported for {game_version}")
 

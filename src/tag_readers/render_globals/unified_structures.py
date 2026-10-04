@@ -20,7 +20,7 @@ class Unified_Client_Bootstrap:
 
 
 @dataclass
-class Unified_Render_Globals_Header:
+class Unified_Render_Globals:
 	file_size: int
 	input_layouts_tag_handle: Tag_Handle
 
