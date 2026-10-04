@@ -654,7 +654,7 @@ def rig_retarget(
 		for i in range(len(skeleton_bones_matrices)):
 			pre_ik_bones_matrices[i] = glm.mat4(skeleton_bones_matrices[i])
 
-		for bone_index in rig_cache.ik_3_chains:
+		for bone_index in rig_cache.rfk_chains:
 			control_index = bone_to_control[bone_index]
 			# RFK chain
 			MAX_INBETWEEN = 16
