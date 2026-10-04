@@ -7,7 +7,7 @@ from libs.tiger_pkg.tag_handle import Tag_Handle
 
 from src.tag_readers.render_globals.unified_structures import (
 	Unified_S_Vertex_Input_Element_Sets_Header, Unified_S_Vertex_Input_Element_Set_Pointer,
-	Unified_Client_Bootstrap_Header, Unified_Render_Globals_Header, Unified_S_Vertex_Input_Layouts,
+	Unified_Client_Bootstrap_Header, Unified_Render_Globals, Unified_S_Vertex_Input_Layouts,
 	Unified_S_Vertex_Input_Layout_Mapping_Header
 )
 
@@ -29,8 +29,8 @@ class S_Render_Globals_Header_D1_ROI:
 	file_size: Annotated[int, u64]
 	input_layouts_tag_handle: Tag_Handle
 
-	def to_unified(self) -> Unified_Render_Globals_Header:
-		return Unified_Render_Globals_Header(self.file_size, self.input_layouts_tag_handle)
+	def to_unified(self) -> Unified_Render_Globals:
+		return Unified_Render_Globals(self.file_size, self.input_layouts_tag_handle)
 
 
 # ref 80801B63
