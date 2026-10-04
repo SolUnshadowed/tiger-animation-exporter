@@ -84,10 +84,11 @@ s_skeleton_spec_secondary_classes: dict[Game_Version, int] = {
 s_dynamic_model_component_secondary_classes = {
 	Game_Version.D1_DEV_ALPHA: 0x808020CA, # 808020C0 if using definition_pointer
 	Game_Version.D1_ROI: 0x80801A80, # 80801A9C if using definition_pointer
-	Game_Version.D2_EOF: 0x80806D8A
+	Game_Version.D2_EOF: 0x80806D8A  # 80806D8F if using definition_pointer
 }
 
 s_entity_model_refs = {
 	Game_Version.D1_DEV_ALPHA: 0x80802020,
-	Game_Version.D1_ROI: 0x80801AB5
+	Game_Version.D1_ROI: 0x80801AB5,
+	Game_Version.D2_EOF: 0x80806F07
 }
