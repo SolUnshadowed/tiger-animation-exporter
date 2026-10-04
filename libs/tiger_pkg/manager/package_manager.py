@@ -51,7 +51,7 @@ class Path_Cache_Entry:
 
 
 @dataclass
-class Hash_Table_Entry_Short:
+class Handle_Table_Entry_Short:
 	handle_32: Tag_Handle
 	reference: Tag_Handle
 
@@ -60,7 +60,7 @@ class Hash_Table_Entry_Short:
 class Tag_Lookup_Index:
 	tag32_entries_by_pkg: dict[int, list[Unified_Entry_Header]]
 	tag32_to_tag64: dict[int, int]
-	tag64_entries: dict[int, Hash_Table_Entry_Short]
+	tag64_entries: dict[int, Handle_Table_Entry_Short]
 	named_tags: list[Package_Named_Tag_Entry]
 
 
@@ -74,7 +74,7 @@ def _process_single_package(
 	args: tuple[int, Package_Path, Game_Version]
 ) -> tuple[
 	tuple[int, list[Unified_Entry_Header]],
-	list[tuple[int, Hash_Table_Entry_Short]],
+	list[tuple[int, Handle_Table_Entry_Short]],
 	list[Package_Named_Tag_Entry]
 ] | None:
 	pkg_id, p_path, version = args
@@ -82,20 +82,20 @@ def _process_single_package(
 	entries = (package.package_id, list(package.get_entries()))
 	#redaction_level = (pkg.pkg_id(), pkg.redaction_level()) # TODO
 
-	hashes = [
+	handles = [
 		(
-			hash_64.handle_64,
-			Hash_Table_Entry_Short(
-				handle_32=hash_64.handle_32,
-				reference=hash_64.reference
+			entry.handle_64.value,
+			Handle_Table_Entry_Short(
+				handle_32=entry.handle_32,
+				reference=entry.reference
 			)
 		)
-		for hash_64 in package.get_hash64_table()
+		for entry in package.get_handle_64_table()
 	]
 
 	named_tags = package.get_named_tags()
 
-	return entries, hashes, named_tags
+	return entries, handles, named_tags
 
 
 class Package_Manager:
@@ -352,13 +352,13 @@ class Package_Manager:
 			logger.warning("No packages to build lookup cache.")
 			return
 
-		entries, hashes_flat, named_tags_flat = zip(*tables) # , redaction_levels_flat
+		entries, handles_flat, named_tags_flat = zip(*tables) # , redaction_levels_flat
 
 		tag32_to_tag64 = {}
 		tag64_entries = {}
 
-		for package_hashes in hashes_flat:
-			for h64, entry in package_hashes:
+		for package_handles in handles_flat:
+			for h64, entry in package_handles:
 				tag32_to_tag64[entry.handle_32.value] = h64
 				tag64_entries[h64] = entry
 

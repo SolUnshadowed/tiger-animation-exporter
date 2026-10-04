@@ -59,7 +59,7 @@ class Package_D1_ROI(Package):
 
 		self.named_tags = [
 			Package_Named_Tag_Entry(
-				handle=entry_d1.hash,
+				handle=entry_d1.handle,
 				class_hash=entry_d1.class_hash,
 				name=bytes(entry_d1.name).rstrip(b"\0").decode("utf-8", errors="replace")
 			)
@@ -113,7 +113,7 @@ class Package_D1_ROI(Package):
 	def get_named_tags(self) -> list[Package_Named_Tag_Entry]:
 		return self.named_tags
 
-	def get_hash64_table(self) -> list[Unified_Hash_Table_Entry]:
+	def get_handle_64_table(self) -> list[Unified_Hash_Table_Entry]:
 		return []
 
 	@property

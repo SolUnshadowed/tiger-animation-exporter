@@ -54,7 +54,7 @@ class Block_Header:
 
 @binary_struct(size=16)
 @dataclass
-class Hash_Table_Entry:
+class Handle_Table_Entry:
 	handle_64: Tag_Handle_64
 	handle_32: Tag_Handle
 	reference: Tag_Handle
@@ -71,7 +71,7 @@ class Package_Common_D2(Package):
 	gcm: Package_GCM
 	unified_entries: list[Unified_Entry_Header]
 	blocks: list[Block_Header]
-	wide_hashes: list[Hash_Table_Entry]
+	wide_handles: list[Handle_Table_Entry]
 
 	file_path_base: str
 	block_cache: Block_Cache
@@ -87,7 +87,7 @@ class Package_Common_D2(Package):
 		group_id: int,
 		entries: list[Entry_Header],
 		blocks: list[Block_Header],
-		wide_hashes: list[Hash_Table_Entry],
+		wide_handles: list[Handle_Table_Entry],
 		language: Package_Language,
 	):
 		super().__init__()
@@ -99,7 +99,7 @@ class Package_Common_D2(Package):
 		self._patch_id = patch_id
 		self.language = language
 		self.blocks = blocks
-		self.wide_hashes = wide_hashes
+		self.wide_handles = wide_handles
 
 		self.file_path_base = file_path[:file_path.rfind("_")]
 

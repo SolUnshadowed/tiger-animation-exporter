@@ -88,6 +88,6 @@ class Block_Header:
 @binary_struct(size=68)
 @dataclass
 class Named_Tag_Entry_D1:
-	hash: Tag_Handle
+	handle: Tag_Handle
 	class_hash: Annotated[int, u32]
 	name: Annotated[list[int], Array(u8, 60)]

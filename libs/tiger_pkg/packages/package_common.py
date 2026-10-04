@@ -100,7 +100,7 @@ class Package(ABC):
 		pass
 
 	@abstractmethod
-	def get_hash64_table(self) -> list[Unified_Hash_Table_Entry]:
+	def get_handle_64_table(self) -> list[Unified_Hash_Table_Entry]:
 		pass
 
 	@abstractmethod

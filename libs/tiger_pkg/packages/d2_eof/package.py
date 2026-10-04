@@ -1,7 +1,7 @@
 from libs.tiger_pkg.enums import Package_Platform
 from libs.tiger_pkg.game_version import Game_Version
 from libs.tiger_pkg.packages.package_common import Package_Named_Tag_Entry, Unified_Hash_Table_Entry
-from libs.tiger_pkg.packages.d2_common import Package_Common_D2, Entry_Header, Block_Header, Hash_Table_Entry
+from libs.tiger_pkg.packages.d2_common import Package_Common_D2, Entry_Header, Block_Header, Handle_Table_Entry
 from libs.tiger_pkg.packages.d2_eof.structures import Package_Header
 from libs.binary_reader import Binary_Reader, s64
 
@@ -38,13 +38,13 @@ class Package_D2_EOF(Package_Common_D2):
 			override_endianness=self.endianness
 		)
 
-		wide_hashes = []
+		wide_handles = []
 
 		if header.h64_table_size > 0:
 			reader.seek(header.h64_table_offset + 0x10)
 			offset = reader.read_type(s64, self.endianness)
 			reader.seek(header.h64_table_offset + 0x20 + offset)
-			wide_hashes = reader.read_struct_array(Hash_Table_Entry, header.h64_table_size)
+			wide_handles = reader.read_struct_array(Handle_Table_Entry, header.h64_table_size)
 
 		Package_Common_D2.__init__(
 			self,
@@ -57,7 +57,7 @@ class Package_D2_EOF(Package_Common_D2):
 			group_id=header.group_id,
 			entries=entries,
 			blocks=blocks,
-			wide_hashes=wide_hashes,
+			wide_handles=wide_handles,
 			language=header.language,
 		)
 
@@ -71,12 +71,12 @@ class Package_D2_EOF(Package_Common_D2):
 	def get_named_tags(self) -> list[Package_Named_Tag_Entry]:
 		return self.named_tags
 
-	def get_hash64_table(self) -> list[Unified_Hash_Table_Entry]:
+	def get_handle_64_table(self) -> list[Unified_Hash_Table_Entry]:
 		return [
 			Unified_Hash_Table_Entry(
 				handle_64=entry.handle_64,
 				handle_32=entry.handle_32,
 				reference=entry.reference,
 			)
-			for entry in self.wide_hashes
+			for entry in self.wide_handles
 		]
