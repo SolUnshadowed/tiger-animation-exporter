@@ -36,8 +36,8 @@ python3 main.py \
 - `-t`, `--target <export_target>` – export format. Supported targets:
   - `json_raw` – extracts data from the tag and writes it to a JSON file. Uses Z-up, X-forward coordinate order for translations and quaternions.
   - `json_retarget` – extracts animation data and retargets it according to provided skeleton and runtime rig constraints. Uses a Y-up, Z-forward coordinate system. Output is a JSON file.
-  - `gltf_retarget` – same as `json_retarget`, but exports a GLTF file containing the armature and animation. Uses a Y-up, Z-forward coordinate system.
-  - `glb_retarget` - same as `gltf_retarget`, but exports a GLB file. **Default option**
+  - `gltf_retarget` – same as `json_retarget`, but exports a GLTF file containing the armature and animation. Uses a Y-up, Z-forward coordinate system. **Default option**
+  - `glb_retarget` - same as `gltf_retarget`, but exports a GLB file.
 
 - `--name-convention <name_convention>` – naming convention for exported bones:
   - `fnv1le` – FNV-1 32-bit little-endian hash.
