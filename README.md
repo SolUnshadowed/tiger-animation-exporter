@@ -1,8 +1,6 @@
-# <DO_NOT_FORGET_NAME>
+# Tiger animation exporter
 
-A utility for parsing `s_animation_clip` tags binaries of Tiger engine (Destiny/Destiny 2/Marathon).
-
-Supports animated codecs 0, 1, 2, 3 and static codec 3.
+Tiger engine animation exporter (Destiny/Destiny 2/Marathon). Next iteration of [tiger-animation-parser](https://github.com/SolUnshadowed/tiger-animation-parser).
 
 ## Requirements
 
@@ -11,14 +9,14 @@ Supports animated codecs 0, 1, 2, 3 and static codec 3.
 
 ```bash
 python -m pip install .
-````
+```
 
 ## Running
 
 ```bash
 python3 main.py \
     -v <game_version> \
-    --packages <path/to/game/packages>
+    --packages <path/to/game/packages> \
     [-t <export_target>] \
     [--name-convention <name_convention>] \
     [--animation-space <space>] \
@@ -37,7 +35,7 @@ python3 main.py \
   - `json_raw` – extracts data from the tag and writes it to a JSON file. Uses Z-up, X-forward coordinate order for translations and quaternions.
   - `json_retarget` – extracts animation data and retargets it according to provided skeleton and runtime rig constraints. Uses a Y-up, Z-forward coordinate system. Output is a JSON file.
   - `gltf_retarget` – same as `json_retarget`, but exports a GLTF file containing the armature and animation. Uses a Y-up, Z-forward coordinate system. **Default option**
-  - `glb_retarget` - same as `gltf_retarget`, but exports a GLB file.
+  - `glb_retarget` – same as `gltf_retarget`, but exports a GLB file.
 
 - `--name-convention <name_convention>` – naming convention for exported bones:
   - `fnv1le` – FNV-1 32-bit little-endian hash.
@@ -47,7 +45,7 @@ python3 main.py \
   - `bungie` – attempts reverse hash lookup using known Bungie bone names, falling back to `fnv1be` if no match is found.
   - `blender` – uses Blender exporter addon names for skeletons when possible, falling back to `fnv1be` for unknown bones.
 
-- `--animation-space <space>` - animation space:
+- `--animation-space <space>` – animation space:
   - `local` – bones' transforms are in parent local space. If `gltf_retarget` or `glb_retarget` is selected, hierarchical skeleton will be created. **Default**.
   - `object` - bones' transforms are in character's object space. If `gltf_retarget` or `glb_retarget` is selected, skeleton bones will be children of the same root.
 
@@ -55,8 +53,15 @@ python3 main.py \
 
 ## References
 
-This project was developed with reference to the following projects, articles,
-and technical presentations:
+This project was developed with reference to the following projects, articles, and technical presentations:
+
+- [tiger-pkg](https://github.com/v4nguard/tiger-pkg) — cohaereo
+  - Packages reading and structures
+  - Tag classes
+  - `libs/tiger_pkg` is implemented based on this project
+
+- [Charm](https://github.com/MontagueM/Charm) — MontagueM
+  - Tag structures and classes
 
 - [3D Content Documentation](https://github.com/Bungie-net/api/wiki/3D-Content-Documentation) — Bungie-net
   - Render stages and LODs 
@@ -77,3 +82,10 @@ and technical presentations:
 
 - [Character Heads Creation Pipeline and Rendering in Destiny course](https://advances.realtimerendering.com/destiny/siggraph2014/heads/index.html) (SIGGRAPH 2014):
   - [FACE ANIMATION RETARGETING IN DESTINY](https://advances.realtimerendering.com/destiny/siggraph2014/heads/siggraph_2014_destiny_face_pipeline.pptx) - Jason G. Jones, and Tom Sanocki
+
+## License
+
+This project is licensed under the GNU General Public License v3.0, see [LICENSE](LICENSE).
+
+The `libs/tiger_pkg` module is a Python port of [tiger-pkg](https://github.com/v4nguard/tiger-pkg)
+by cohaereo, which is licensed under the MIT License, see [libs/tiger-pkg/LICENSE](libs/tiger-pkg/LICENSE).
