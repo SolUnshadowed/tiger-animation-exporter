@@ -88,4 +88,4 @@ This project was developed with reference to the following projects, articles, a
 This project is licensed under the GNU General Public License v3.0, see [LICENSE](LICENSE).
 
 The `libs/tiger_pkg` module is a Python port of [tiger-pkg](https://github.com/v4nguard/tiger-pkg)
-by cohaereo, which is licensed under the MIT License, see [libs/tiger-pkg/LICENSE](libs/tiger-pkg/LICENSE).
+by cohaereo, which is licensed under the MIT License, see [libs/tiger_pkg/LICENSE](libs/tiger_pkg/LICENSE).
