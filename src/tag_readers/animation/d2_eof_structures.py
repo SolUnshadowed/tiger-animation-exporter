@@ -1,14 +1,15 @@
 from dataclasses import dataclass
 from typing import Annotated
 
-from libs.binary_reader import binary_struct, L_Padding, u16, u32, u64
+from libs.binary_reader import binary_struct, L_Padding, u8, u16, u32, u64
 
 from libs.tag.tag_pointers import Rel_Pointer_64, Vec_Pointer_64
 from src.tag_readers.animation.unified_structures import Unified_Animation_Header
 
+from .animation_type import Animation_Type
 
 # also valid for marathon
-@binary_struct(size=0x180)
+@binary_struct(size=0x182)
 @dataclass
 class D2_EOF_Animation_Header:
 	file_size: Annotated[int, u64]
@@ -41,6 +42,8 @@ class D2_EOF_Animation_Header:
 	frame_events_array_pointer: Vec_Pointer_64
 	rig_components_array_pointer: Vec_Pointer_64
 
+	animation_type: Annotated[Animation_Type, u8, L_Padding(1)]
+
 	def to_unified(self) -> Unified_Animation_Header:
 		return Unified_Animation_Header(
 			file_size=self.file_size,
@@ -65,5 +68,6 @@ class D2_EOF_Animation_Header:
 			node_count=self.node_count,
 			rig_control_count=self.rig_control_count,
 			frame_events_array_pointer=self.frame_events_array_pointer,
-			rig_components_array_pointer=self.rig_components_array_pointer
+			rig_components_array_pointer=self.rig_components_array_pointer,
+			animation_type=self.animation_type
 		)

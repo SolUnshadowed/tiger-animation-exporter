@@ -9,6 +9,8 @@ from src.tag_readers.animation.unified_structures import (
 	Unified_Animation_Header, Unified_Codec_0_Header_Part, Unified_Codec_1_Header_Part, Unified_Codec_2_Header_Part, Unified_Codec_3_Header_Part
 )
 
+from .animation_type import Animation_Type
+
 
 @binary_struct()
 @dataclass(slots=True)
@@ -43,6 +45,9 @@ class D1_DEVALPHA_Animation_Header:
 	frame_events_array_pointer: Vec_Pointer_32
 	rig_components_array_pointer: Vec_Pointer_32
 
+	animation_type:  Annotated[Animation_Type, u8, L_Padding(5)]
+
+
 	def to_unified(self) -> Unified_Animation_Header:
 		return Unified_Animation_Header(
 			file_size=self.file_size,
@@ -67,7 +72,8 @@ class D1_DEVALPHA_Animation_Header:
 			node_count=self.node_count,
 			rig_control_count=self.rig_control_count,
 			frame_events_array_pointer=self.frame_events_array_pointer,
-			rig_components_array_pointer=self.rig_components_array_pointer
+			rig_components_array_pointer=self.rig_components_array_pointer,
+			animation_type=self.animation_type
 		)
 
 

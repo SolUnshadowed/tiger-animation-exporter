@@ -3,6 +3,7 @@ from typing import Self
 
 from libs.tag.tag_pointers import Base_Rel_Pointer, Base_Vec_Pointer
 
+from .animation_type import Animation_Type
 
 @dataclass(slots=True)
 class Unified_Animation_Header:
@@ -29,6 +30,7 @@ class Unified_Animation_Header:
 	rig_control_count: int
 	frame_events_array_pointer: Base_Vec_Pointer
 	rig_components_array_pointer: Base_Vec_Pointer
+	animation_type: Animation_Type
 
 
 @dataclass
