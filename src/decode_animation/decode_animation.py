@@ -157,11 +157,12 @@ def decode_codec_1_buffers(codec_header: Unified_Codec_1, buffers: Codec_1_Buffe
 
 	# allocate all the data at once
 	# shape (bones_count, frames_count, 1 component (so 2D array))
-	scales = np.empty((codec_header.scale_stream_count, frame_count), dtype=np.float32)
+	scales = np.ones((codec_header.scale_stream_count, frame_count), dtype=np.float32)
 	# shape (bones_count, frames_count, 4 components)
-	rotations = np.empty((codec_header.rotation_stream_count, frame_count, 4), dtype=np.float32)
+	rotations = np.zeros((codec_header.rotation_stream_count, frame_count, 4), dtype=np.float32)
+	rotations[..., 3] = 1.0 # if skipping with array_7_element == 0, need to have normal quat in its place
 	# shape (bones_count, frames_count, 3 components)
-	translations = np.empty((codec_header.translation_stream_count, frame_count, 3), dtype=np.float32)
+	translations = np.zeros((codec_header.translation_stream_count, frame_count, 3), dtype=np.float32)
 
 	# animated
 	array_7_offset = 0
@@ -169,13 +170,20 @@ def decode_codec_1_buffers(codec_header: Unified_Codec_1, buffers: Codec_1_Buffe
 	for bone_map_i in range(codec_header.scale_stream_count):
 		array_7_element = array_7[array_7_offset]
 
+		quantization_minimum = quantization_minimums[bone_map_i]
+		quantization_extent = quantization_extents[bone_map_i]
+
 		if array_7_element > 0:  # compressed_data
 			offset = array_7_element - 1  # because data is 1-indexed
 			stride, offset = compressed_data.read_vec(offset, 3)
 			frames_deltas_offset, interp_data_offset, frames_deltas_count = stride
 
 			raw_sc, offset = compressed_data.read_scalar(offset) # scalar adds one, so no need to use SCALE_COMPONENTS
-			first_sc = unpack_snorm16_scalar(raw_sc)
+			first_sc = correct_quantization_scalar(
+				unpack_snorm16_scalar(raw_sc),
+				quantization_minimum,
+				quantization_extent
+			)
 
 			deltas = keyframe_deltas.data[frames_deltas_offset: frames_deltas_offset + frames_deltas_count]
 
@@ -184,7 +192,11 @@ def decode_codec_1_buffers(codec_header: Unified_Codec_1, buffers: Codec_1_Buffe
 			insert_start_index = 1
 			for i in range(frames_deltas_count):
 				raw_sc, offset = compressed_data.read_scalar(offset)
-				second_sc = unpack_snorm16_scalar(raw_sc)
+				second_sc = correct_quantization_scalar(
+					unpack_snorm16_scalar(raw_sc),
+					quantization_minimum,
+					quantization_extent
+				)
 
 				frames_delta = np.int32(deltas[i])
 				interp_byte, interp_data_offset = interpolation_data.read_scalar(interp_data_offset)
@@ -202,9 +214,13 @@ def decode_codec_1_buffers(codec_header: Unified_Codec_1, buffers: Codec_1_Buffe
 				insert_start_index += frames_delta
 				first_sc = second_sc  # second becomes first
 
-		else:  # uncompressed data
+		elif array_7_element < 0:  # uncompressed data
 			offset = abs(array_7_element) - 1
-			scales[bone_map_i] = unpack_snorm16_vector(uncompressed_data.data[offset: offset + frame_count])
+			scales[bone_map_i] = correct_quantization_vector(
+				unpack_snorm16_vector(uncompressed_data.data[offset: offset + frame_count]),
+				quantization_minimum,
+				quantization_extent
+			)
 
 		array_7_offset += 1
 
@@ -243,7 +259,8 @@ def decode_codec_1_buffers(codec_header: Unified_Codec_1, buffers: Codec_1_Buffe
 				insert_start_index += frames_delta
 				first_quat = second_quat
 
-		else:  # uncompressed data
+
+		elif array_7_element < 0:  # uncompressed data
 			offset = abs(array_7_element) - 1
 
 			chunk, offset = uncompressed_data.read_vec(offset, frame_count * COMP_ROTATION_COMPONENTS)
@@ -254,8 +271,8 @@ def decode_codec_1_buffers(codec_header: Unified_Codec_1, buffers: Codec_1_Buffe
 	for bone_map_i in range(codec_header.translation_stream_count):
 		array_7_element = array_7[array_7_offset]
 
-		quantization_minimum = quantization_minimums[bone_map_i]
-		quantization_extent = quantization_extents[bone_map_i]
+		quantization_minimum = quantization_minimums[bone_map_i + codec_header.scale_stream_count]
+		quantization_extent = quantization_extents[bone_map_i + codec_header.scale_stream_count]
 
 		if array_7_element > 0:  # compressed_data
 			offset = array_7_element - 1  # because data is 1-indexed
@@ -309,12 +326,14 @@ def decode_codec_1_buffers(codec_header: Unified_Codec_1, buffers: Codec_1_Buffe
 				insert_start_index += frames_delta
 				first_tr = second_tr
 
-		else:  # non-compressed data
+
+		elif array_7_element < 0:  # non-compressed data
 			offset = abs(array_7_element) - 1
 			chunk, offset = uncompressed_data.read_vec(offset, frame_count * TRANSLATION_COMPONENTS)
 
 			translations[bone_map_i] = correct_quantization_vector(
-				unpack_snorm16_vector(chunk.reshape(frame_count, TRANSLATION_COMPONENTS)), quantization_minimum,
+				unpack_snorm16_vector(chunk.reshape(frame_count, TRANSLATION_COMPONENTS)),
+				quantization_minimum,
 				quantization_extent
 			)
 
