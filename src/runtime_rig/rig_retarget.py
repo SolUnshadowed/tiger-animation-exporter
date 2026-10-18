@@ -10,7 +10,7 @@ from libs.tag.data_types import Skeleton_Node_Def, Runtime_Rig_Component
 from libs.matrix_operations import (
 	glm_get_scale, glm_get_quat, glm_get_translation,
 	glm_decompose_mat4, glm_compose_mat4, glm_interpolate_mat4,
-	glm_axis_x, glm_axis_y, glm_axis_z, X, Z
+	glm_axis_x, glm_axis_y, glm_axis_z, X, Y, Z
 )
 from src.tag_readers.animation.read_animation import Animation_Data
 from src.tag_readers.skeleton.read_skeleton import Skeleton
@@ -21,10 +21,11 @@ from src.tag_readers.runtime_rig.unified_structures import (
 	Unified_Constraint, Constraint_Type,
 	IK_Function_Type, Space_Type, Space_Def
 )
-from .helpers import ik_3_solve_no_pole, propagate
+from .helpers import ik_3_solve_no_pole, ik_3_solve_with_pole, propagate
 
 logger = logging.getLogger(__name__)
 IDENTITY_MAT4 = glm.mat4()
+POLE_AXES = [X, Y, Z, -X, -Y, -Z]
 
 @dataclass(slots=True)
 class IK_Affected_Control:
@@ -708,8 +709,15 @@ def rig_retarget(
 
 			target_matrix = skeleton_bones_matrices[end_bone_index]
 
-			# TODO: add propagate and ik_3_solve_with_pole
-			arr = ik_3_solve_no_pole(target_matrix, start_matrix, middle_matrix, end_matrix)
+			control_index = bone_to_control[bone_index]
+			constraint = constraints[control_index]
+			pole_code = constraint.pole_axis
+
+			if pole_code and constraint.ik_function_type == IK_Function_Type.IK_3 and 1 <= pole_code <= 6:
+				pole = glm_get_quat(start_matrix) * POLE_AXES[pole_code - 1]
+				arr = ik_3_solve_with_pole(target_matrix, pole, start_matrix, middle_matrix, end_matrix)
+			else:
+				arr = ik_3_solve_no_pole(target_matrix, start_matrix, middle_matrix, end_matrix)
 
 			if arr is None:
 				continue

@@ -29,7 +29,7 @@ class Unified_Constraint:
 	ik_chain_start_bone_index: int
 	constraint_type: Constraint_Type
 	ik_function_type: IK_Function_Type
-	unk_0: int
+	pole_axis: int
 	unk_1: int
 
 
@@ -42,5 +42,6 @@ class Unified_Runtime_Rig_Main_Struct:
 	bone_to_control_pointer: Base_Vec_Pointer
 	control_to_bone_pointer: Base_Vec_Pointer
 	control_name_to_bone_index_pointer: Base_Vec_Pointer
+	use_pole_axes: bool
 
 

@@ -29,6 +29,7 @@ class D1_DEVALPHA_Runtime_Rig_Main_Struct:
 			bone_to_control_pointer=self.bone_to_control_pointer,
 			control_to_bone_pointer=self.control_to_bone_pointer,
 			control_name_to_bone_index_pointer=self.control_name_to_bone_index_pointer,
+			use_pole_axes=False # TODO: figure where it is for dev alpha
 		)
 
 @binary_struct(size=48)
@@ -46,7 +47,7 @@ class Constraint_D1:
 	ik_chain_start_bone_index: Annotated[int, s16]
 	constraint_type: Annotated[Constraint_Type, s8]
 	ik_function_type: Annotated[IK_Function_Type, s8]
-	unk_0: Annotated[int, s8]
+	pole_axis: Annotated[int, s8]
 	unk_1: Annotated[int, s8]
 
 	def to_unified(self) -> Unified_Constraint:
@@ -64,6 +65,6 @@ class Constraint_D1:
 			ik_chain_start_bone_index=self.ik_chain_start_bone_index,
 			constraint_type=self.constraint_type,
 			ik_function_type=self.ik_function_type,
-			unk_0=self.unk_0,
+			pole_axis=self.pole_axis,
 			unk_1=self.unk_1,
 		)

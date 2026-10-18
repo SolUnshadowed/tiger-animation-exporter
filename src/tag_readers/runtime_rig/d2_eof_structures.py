@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from typing import Annotated
 
-from libs.binary_reader import binary_struct, Endianness, s8, s16, s32, u32, f32, L_Padding
+from libs.binary_reader import binary_struct, Endianness, s8, u8, s16, s32, u32, f32, L_Padding
 from src.tag_readers.runtime_rig.unified_structures import Space_Def, IK_Function_Type, Constraint_Type, Unified_Constraint, Unified_Runtime_Rig_Main_Struct
 from libs.tag.tag_pointers import Vec_Pointer_64
+from libs.tiger_pkg.tag_handle import Tag_Handle
 
 
 @binary_struct()
@@ -14,12 +15,14 @@ class D2_EOF_Runtime_Rig_Main_Struct:  # same for marathon
 	controls_relations_pointer: Vec_Pointer_64
 	controls_transforms_pointer: Vec_Pointer_64
 	ik_controls_pointer: Vec_Pointer_64
-	some_tag: Annotated[int, u32]
+	some_tag: Tag_Handle
 
 	bone_to_control_pointer: Annotated[Vec_Pointer_64, L_Padding(4)]
 	control_to_bone_pointer: Vec_Pointer_64
 
 	control_name_to_bone_index_pointer: Annotated[Vec_Pointer_64, L_Padding(24)]
+
+	use_pole_axes: Annotated[bool, u8, L_Padding(8)]
 
 	def to_unified(self) -> Unified_Runtime_Rig_Main_Struct:
 		return Unified_Runtime_Rig_Main_Struct(
@@ -30,6 +33,7 @@ class D2_EOF_Runtime_Rig_Main_Struct:  # same for marathon
 			bone_to_control_pointer=self.bone_to_control_pointer,
 			control_to_bone_pointer=self.control_to_bone_pointer,
 			control_name_to_bone_index_pointer=self.control_name_to_bone_index_pointer,
+			use_pole_axes=self.use_pole_axes
 		)
 
 
@@ -49,7 +53,7 @@ class Constraint_D2:
 	ik_chain_start_bone_index: Annotated[int, s16]
 	constraint_type: Annotated[Constraint_Type, s8]
 	ik_function_type: Annotated[IK_Function_Type, s8]
-	unk_0: Annotated[int, s8]
+	unk_0: Annotated[int, s8] # pole for pole solver
 	unk_1: Annotated[int, s8]
 
 	def to_unified(self) -> Unified_Constraint:
@@ -67,6 +71,6 @@ class Constraint_D2:
 			ik_chain_start_bone_index=self.ik_chain_start_bone_index,
 			constraint_type=self.constraint_type,
 			ik_function_type=self.ik_function_type,
-			unk_0=self.unk_0,
+			pole_axis=self.unk_0,
 			unk_1=self.unk_1,
 		)

@@ -30,4 +30,5 @@ class D1_ROI_Runtime_Rig_Main_Struct:
 			bone_to_control_pointer=self.bone_to_control_pointer,
 			control_to_bone_pointer=self.control_to_bone_pointer,
 			control_name_to_bone_index_pointer=self.control_name_to_bone_index_pointer,
+			use_pole_axes=False  # TODO: figure where it is for roi
 		)
