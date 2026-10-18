@@ -102,7 +102,7 @@ class Tag_List_Widget(QWidget):
 			filtered = list(self.raw_tags)
 		else:
 			query = filter_text.lower()
-			filtered = [p for p in self.raw_tags if query in str(hex(p.handle)).lower()]
+			filtered = [p for p in self.raw_tags if query in f'{p.handle:08X}'.lower()]
 
 		filtered.sort(
 			key=lambda item: item.number if sort_field is SORT_FIELD.NUMBER else item.size,
@@ -276,7 +276,7 @@ class Animation_List_Widget(QWidget):
 		self.update_display_list(filtered)
 
 	def matches_filter(self, animation: Tag_Model, query: str) -> bool:
-		return query in str(animation.handle).lower()
+		return query in f'{animation.handle:08X}'.lower()
 
 	def sort_key(self, animation: Tag_Model, field: SORT_FIELD):
 		if field is SORT_FIELD.NUMBER:
