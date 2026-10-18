@@ -92,7 +92,18 @@ def ik_3_solve_no_pole(
         (2 * start_to_middle_len * start_to_target_vec_clamped)
     )
     sin_a = glm.sqrt(max(1 - cos_a * cos_a, 1e-8))
-    bend_plane_rot = look_rot_x_dir_y_ref(start_to_target_aim, glm.normalize(start_to_middle_vec))
+
+    # trying to fix 
+    # bend_plane_rot = look_rot_x_dir_y_ref(start_to_target_aim, glm.normalize(start_to_middle_vec))
+
+    n = glm.cross(start_to_middle_vec, middle_to_end_vec)  # bend plane normal
+    ref = glm.cross(start_to_target_aim, n)  # knee direction
+    # because using cross this ref is perpendicular to start_to_target_aim, a perfect reference y for look_rot_x_dir_y_ref
+    if glm.length(ref) > 1e-3 * start_to_middle_len * middle_to_end_len:
+        ref_y = glm.normalize(ref) # normalize ref, look_rot_x_dir_y_ref expects ref is normalized
+    else:
+        ref_y = glm.normalize(start_to_middle_vec)  # old variant
+    bend_plane_rot = look_rot_x_dir_y_ref(start_to_target_aim, ref_y)
     # look_rot_x_dir_y_ref is not mandatory, can be look_rot_x_dir_z_ref
     # just making a basis with x and y, hence in next line z is zero, because plane is flat, obviously
     middle_new_tr = start_tr + bend_plane_rot * glm.vec3(start_to_middle_len * cos_a, start_to_middle_len * sin_a, 0)

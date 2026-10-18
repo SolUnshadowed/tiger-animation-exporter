@@ -229,6 +229,9 @@ def rig_retarget(
 	skeleton: Skeleton,
 	rig: Runtime_Rig_Data,
 ) -> list[Bone_Tracks]:
+	# rig flag
+	use_pole_axis = rig.use_pole_axis
+	logger.info(f"Rig use pole axis flag: {use_pole_axis}")
 	# animation properties
 	frames = animation_data.animation_header.frame_count
 	# object properties
@@ -696,6 +699,7 @@ def rig_retarget(
 					skeleton_bones_matrices[bone] = pose_start * glm_interpolate_mat4(rest_relative, distributed, t)
 					bone_updated[bone] = True
 
+
 		for bone_index in rig_cache.ik_3_chains:
 			chain = rig_cache.ik_3_chains[bone_index]
 
@@ -713,7 +717,7 @@ def rig_retarget(
 			constraint = constraints[control_index]
 			pole_code = constraint.pole_axis
 
-			if pole_code and constraint.ik_function_type == IK_Function_Type.IK_3 and 1 <= pole_code <= 6:
+			if use_pole_axis and pole_code and 1 <= pole_code <= 6:
 				pole = glm_get_quat(start_matrix) * POLE_AXES[pole_code - 1]
 				arr = ik_3_solve_with_pole(target_matrix, pole, start_matrix, middle_matrix, end_matrix)
 			else:

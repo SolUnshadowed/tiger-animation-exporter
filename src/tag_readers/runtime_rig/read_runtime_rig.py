@@ -24,6 +24,7 @@ class Runtime_Rig_Data:
 	bone_to_control: Tag_Array[int]
 	control_to_bone: Tag_Array[int]
 	control_name_to_bone_index: Tag_Array[Runtime_Rig_Component]
+	use_pole_axis: bool
 
 
 def read_runtime_rig_main_struct(
@@ -80,7 +81,8 @@ def read_runtime_rig_data(
 		controls_transforms=controls_transforms,
 		bone_to_control=bone_to_control,
 		control_to_bone=control_to_bone,
-		control_name_to_bone_index=control_name_to_bone_index
+		control_name_to_bone_index=control_name_to_bone_index,
+		use_pole_axis=main_struct.use_pole_axes
 	)
 
 
